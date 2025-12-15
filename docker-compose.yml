@@ -1,0 +1,39 @@
+version: '3.8'
+
+services:
+  web:
+    container_name: drivercloudmd_web
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: always
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      # - DATABASE_URL=postgresql://user:password@db:5432/dbname
+      # - NEXT_PUBLIC_SUPABASE_URL=your-project-url
+      # - NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
+    networks:
+      - drivercloud_network
+  # db:
+  #   image: postgres:15-alpine
+  #   container_name: drivercloudmd_db
+  #   restart: always
+  #   environment:
+  #     POSTGRES_USER: user
+  #     POSTGRES_PASSWORD: password
+  #     POSTGRES_DB: dbname
+  #   volumes:
+  #     - db_data:/var/lib/postgresql/data
+  #   networks:
+  #     - drivercloud_network
+  #   ports:
+  #     - "5432:5432"
+
+networks:
+  drivercloud_network:
+    driver: bridge
+
+# volumes:
+#   db_data:
