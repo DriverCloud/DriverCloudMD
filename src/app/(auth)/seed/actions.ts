@@ -1,8 +1,8 @@
 'use server'
 import { createClient } from '@/lib/supabase/server';
-import { createStudent } from '../(dashboard)/students/actions';
-import { createInstructor } from '../(dashboard)/instructors/actions';
-import { createVehicle } from '../(dashboard)/vehicles/actions';
+import { createStudent } from '../dashboard/students/actions';
+import { createInstructor } from '../dashboard/instructors/actions';
+import { createVehicle } from '../dashboard/vehicles/actions';
 
 export async function seedData() {
     console.log('Starting seed...');

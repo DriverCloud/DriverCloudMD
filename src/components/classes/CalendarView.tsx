@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { format, addDays, startOfWeek, addWeeks, subWeeks, isSameDay } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Button } from '@/components/ui/button';
-import { ChevronLeft, ChevronRight, Calendar as CalendarIcon } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
     Select,
@@ -14,6 +14,8 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
+import { CreateClassDialog } from './CreateClassDialog';
+import { EditClassDialog } from './EditClassDialog';
 
 interface CalendarViewProps {
     appointments: any[];
@@ -22,21 +24,59 @@ interface CalendarViewProps {
     resources: any;
 }
 
+// Helper to generate consistent color for a vehicle
+function getVehicleColor(vehicleId: string): { bg: string; border: string; text: string } {
+    const colors = [
+        { bg: 'bg-blue-100', border: 'border-blue-300', text: 'text-blue-900' },
+        { bg: 'bg-purple-100', border: 'border-purple-300', text: 'text-purple-900' },
+        { bg: 'bg-pink-100', border: 'border-pink-300', text: 'text-pink-900' },
+        { bg: 'bg-orange-100', border: 'border-orange-300', text: 'text-orange-900' },
+        { bg: 'bg-teal-100', border: 'border-teal-300', text: 'text-teal-900' },
+        { bg: 'bg-cyan-100', border: 'border-cyan-300', text: 'text-cyan-900' },
+        { bg: 'bg-indigo-100', border: 'border-indigo-300', text: 'text-indigo-900' },
+        { bg: 'bg-emerald-100', border: 'border-emerald-300', text: 'text-emerald-900' },
+    ];
+
+    // Simple hash function
+    let hash = 0;
+    for (let i = 0; i < vehicleId.length; i++) {
+        hash = vehicleId.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    const index = Math.abs(hash) % colors.length;
+    return colors[index];
+}
+
 export function CalendarView({ appointments, currentDate, view, resources }: CalendarViewProps) {
     const router = useRouter();
+    const [createOpen, setCreateOpen] = useState(false);
+    const [editOpen, setEditOpen] = useState(false);
+    const [selectedDate, setSelectedDate] = useState<string>('');
+    const [selectedTime, setSelectedTime] = useState<string>('');
+    const [selectedAppointment, setSelectedAppointment] = useState<any | null>(null);
 
     const handlePrev = () => {
         const newDate = subWeeks(currentDate, 1);
-        router.push(`?date=${format(newDate, 'yyyy-MM-dd')}&view=${view}`);
+        router.push(`/dashboard/classes?date=${format(newDate, 'yyyy-MM-dd')}&view=${view}`);
     };
 
     const handleNext = () => {
         const newDate = addWeeks(currentDate, 1);
-        router.push(`?date=${format(newDate, 'yyyy-MM-dd')}&view=${view}`);
+        router.push(`/dashboard/classes?date=${format(newDate, 'yyyy-MM-dd')}&view=${view}`);
     };
 
     const handleToday = () => {
-        router.push(`?date=${format(new Date(), 'yyyy-MM-dd')}&view=${view}`);
+        router.push(`/dashboard/classes?date=${format(new Date(), 'yyyy-MM-dd')}&view=${view}`);
+    };
+
+    const handleSlotClick = (dateStr: string, hour: number) => {
+        setSelectedDate(dateStr);
+        setSelectedTime(`${hour.toString().padStart(2, '0')}:00`);
+        setCreateOpen(true);
+    };
+
+    const handleAppointmentClick = (app: any) => {
+        setSelectedAppointment(app);
+        setEditOpen(true);
     };
 
     // Generate week days
@@ -65,7 +105,9 @@ export function CalendarView({ appointments, currentDate, view, resources }: Cal
                     <Button variant="outline" onClick={handleToday}>
                         Hoy
                     </Button>
-                    <Select defaultValue={view} onValueChange={(v) => router.push(`?date=${format(currentDate, 'yyyy-MM-dd')}&view=${v}`)}>
+                    <Select defaultValue={view} onValueChange={(v) => {
+                        router.push(`/dashboard/classes?date=${format(currentDate, 'yyyy-MM-dd')}&view=${v}`);
+                    }}>
                         <SelectTrigger className="w-[120px]">
                             <SelectValue placeholder="Vista" />
                         </SelectTrigger>
@@ -79,13 +121,13 @@ export function CalendarView({ appointments, currentDate, view, resources }: Cal
 
             {/* Calendar Grid */}
             <div className="flex-1 overflow-auto">
-                <div className="min-w-[800px]">
+                <div className="min-w-[800px] h-full">
                     {/* Header Row (Days) */}
-                    <div className="grid grid-cols-[60px_1fr_1fr_1fr_1fr_1fr_1fr] border-b bg-muted/20">
-                        <div className="p-2 border-r text-xs text-muted-foreground text-center content-center">Hora</div>
+                    <div className="grid grid-cols-[60px_1fr_1fr_1fr_1fr_1fr_1fr] border-b bg-muted/20 sticky top-0 z-30">
+                        <div className="p-2 border-r text-xs text-muted-foreground text-center content-center bg-muted/20">Hora</div>
                         {weekDays.map((day) => (
                             <div key={day.toString()} className={cn(
-                                "p-2 text-center border-r last:border-r-0",
+                                "p-2 text-center border-r last:border-r-0 bg-muted/20",
                                 isSameDay(day, new Date()) && "bg-primary/10"
                             )}>
                                 <div className="text-xs text-muted-foreground capitalize">
@@ -112,44 +154,67 @@ export function CalendarView({ appointments, currentDate, view, resources }: Cal
                             {/* Columns for each day */}
                             {weekDays.map((day) => {
                                 // Find appointments for this slot
-                                const slotApps = appointments.filter(app => {
-                                    const appDate = new Date(app.scheduled_date + 'T00:00:00'); // Fix timezone issue carefully? 
-                                    // Actually scheduled_date is YYYY-MM-DD string.
-                                    // Let's compare strings.
-                                    const dayStr = format(day, 'yyyy-MM-dd');
-                                    if (app.scheduled_date !== dayStr) return false;
+                                const dayStr = format(day, 'yyyy-MM-dd');
 
+                                const slotApps = appointments.filter(app => {
+                                    if (app.scheduled_date !== dayStr) return false;
                                     const appHour = parseInt(app.start_time.split(':')[0]);
                                     return appHour === hour;
                                 });
 
+                                // Calculate width for each appointment if multiple
+                                const appCount = slotApps.length;
+                                const widthPercent = appCount > 0 ? 100 / appCount : 100;
+
                                 return (
-                                    <div key={day.toString()} className="border-r last:border-r-0 relative min-h-[60px] p-1 group hover:bg-muted/5 transition-colors">
-                                        {slotApps.map(app => (
-                                            <div
-                                                key={app.id}
-                                                className={cn(
-                                                    "absolute left-1 right-1 rounded p-1 text-xs border shadow-sm cursor-pointer hover:shadow-md transition-shadow z-20",
-                                                    app.status === 'scheduled' ? "bg-blue-100 border-blue-200 text-blue-800" :
-                                                        app.status === 'completed' ? "bg-green-100 border-green-200 text-green-800" :
-                                                            app.status === 'cancelled' ? "bg-red-50 border-red-100 text-red-800 line-through" :
-                                                                "bg-gray-100 border-gray-200"
-                                                )}
-                                                style={{
-                                                    top: '0px',
-                                                    // Simple height calc: if duration is minutes, map to pixels. 1 hour = 60px height.
-                                                    // app.class_type.duration_minutes
-                                                    height: `${(app.class_type?.duration_minutes || 60)}px`
-                                                }}
-                                            >
-                                                <div className="font-semibold truncate">
-                                                    {app.student?.first_name} {app.student?.last_name}
+                                    <div
+                                        key={day.toString()}
+                                        className="border-r last:border-r-0 relative min-h-[60px] group transition-colors hover:bg-muted/5 cursor-pointer"
+                                        onClick={() => handleSlotClick(dayStr, hour)}
+                                    >
+                                        {/* Clickable Area Overlay for slot creation */}
+
+                                        {slotApps.map((app, index) => {
+                                            const vehicleColors = getVehicleColor(app.vehicle_id || 'default');
+
+                                            // Override colors if cancelled or completed
+                                            let finalColors = vehicleColors;
+                                            if (app.status === 'completed') {
+                                                finalColors = { bg: 'bg-green-100', border: 'border-green-300', text: 'text-green-900' };
+                                            } else if (app.status === 'cancelled') {
+                                                finalColors = { bg: 'bg-red-50', border: 'border-red-200', text: 'text-red-800' };
+                                            }
+
+                                            return (
+                                                <div
+                                                    key={app.id}
+                                                    className={cn(
+                                                        "absolute rounded p-1 text-xs border shadow-sm cursor-pointer hover:shadow-md transition-shadow z-20",
+                                                        finalColors.bg,
+                                                        finalColors.border,
+                                                        finalColors.text,
+                                                        app.status === 'cancelled' && "line-through opacity-60"
+                                                    )}
+                                                    style={{
+                                                        top: '2px',
+                                                        left: `${index * widthPercent}%`,
+                                                        width: `${widthPercent - 2}%`,
+                                                        height: `${Math.min((app.class_type?.duration_minutes || 60), 58)}px`
+                                                    }}
+                                                    onClick={(e) => {
+                                                        e.stopPropagation(); // Prevent slot click
+                                                        handleAppointmentClick(app);
+                                                    }}
+                                                >
+                                                    <div className="font-semibold truncate text-[10px]">
+                                                        {app.student?.first_name} {app.student?.last_name}
+                                                    </div>
+                                                    <div className="truncate opacity-75 text-[9px]">
+                                                        {app.start_time.slice(0, 5)} - {app.vehicle?.brand}
+                                                    </div>
                                                 </div>
-                                                <div className="truncate opacity-75">
-                                                    {app.start_time} - {app.vehicle?.brand}
-                                                </div>
-                                            </div>
-                                        ))}
+                                            );
+                                        })}
                                     </div>
                                 );
                             })}
@@ -157,6 +222,21 @@ export function CalendarView({ appointments, currentDate, view, resources }: Cal
                     ))}
                 </div>
             </div>
+
+            <CreateClassDialog
+                resources={resources}
+                open={createOpen}
+                onOpenChange={setCreateOpen}
+                defaultDate={selectedDate}
+                defaultTime={selectedTime}
+            />
+
+            <EditClassDialog
+                resources={resources}
+                appointment={selectedAppointment}
+                open={editOpen}
+                onOpenChange={setEditOpen}
+            />
         </div>
     );
 }

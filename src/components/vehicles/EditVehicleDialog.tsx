@@ -20,7 +20,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
-import { updateVehicle } from '@/app/(auth)/(dashboard)/vehicles/actions';
+import { updateVehicle } from '@/app/(auth)/dashboard/vehicles/actions';
 import { useRouter } from 'next/navigation';
 import { Loader2, Pencil } from 'lucide-react';
 
@@ -32,6 +32,7 @@ interface EditVehicleDialogProps {
         year: number;
         license_plate: string;
         transmission_type: string;
+        status: string;
     };
 }
 
@@ -134,22 +135,42 @@ export function EditVehicleDialog({ vehicle }: EditVehicleDialogProps) {
                             </div>
                         </div>
 
-                        <div className="space-y-2">
-                            <Label htmlFor="transmission_type">Tipo de Transmisión *</Label>
-                            <Select
-                                value={transmissionType}
-                                onValueChange={setTransmissionType}
-                                disabled={loading}
-                                required
-                            >
-                                <SelectTrigger>
-                                    <SelectValue placeholder="Selecciona el tipo" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="manual">Manual</SelectItem>
-                                    <SelectItem value="automatic">Automática</SelectItem>
-                                </SelectContent>
-                            </Select>
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <Label htmlFor="transmission_type">Tipo de Transmisión *</Label>
+                                <Select
+                                    value={transmissionType}
+                                    onValueChange={setTransmissionType}
+                                    disabled={loading}
+                                    required
+                                >
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Selecciona el tipo" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="manual">Manual</SelectItem>
+                                        <SelectItem value="automatic">Automática</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="status">Estado *</Label>
+                                <Select
+                                    name="status"
+                                    defaultValue={vehicle.status}
+                                    disabled={loading}
+                                    required
+                                >
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Selecciona el estado" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="active">Activo</SelectItem>
+                                        <SelectItem value="maintenance">En Mantenimiento</SelectItem>
+                                        <SelectItem value="inactive">Inactivo</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
                         </div>
                     </div>
 

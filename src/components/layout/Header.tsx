@@ -1,8 +1,10 @@
-"use client";
-
 import { Bell, Search } from "lucide-react";
+import { getNotifications } from "@/components/notifications/actions";
+import { NotificationBell } from "@/components/notifications/NotificationBell";
 
-export function Header() {
+export async function Header() {
+    const notifications = await getNotifications();
+
     return (
         <header className="flex items-center justify-between h-16 px-6 bg-background border-b border-border shrink-0 z-10">
             {/* Left: Breadcrumbs */}
@@ -29,10 +31,7 @@ export function Header() {
             {/* Right: Actions */}
             <div className="flex items-center gap-4">
                 {/* Notification Bell */}
-                <button className="relative p-2 text-muted-foreground hover:bg-muted rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-primary/20">
-                    <Bell className="h-5 w-5" />
-                    <span className="absolute top-2 right-2.5 block h-2 w-2 rounded-full bg-red-500 ring-2 ring-background"></span>
-                </button>
+                <NotificationBell notifications={notifications} />
 
                 {/* User Menu Trigger (Avatar only for simplicity in this layout) */}
                 <button className="relative flex-shrink-0 focus:outline-none focus:ring-2 focus:ring-primary rounded-full">
@@ -45,3 +44,4 @@ export function Header() {
         </header>
     );
 }
+

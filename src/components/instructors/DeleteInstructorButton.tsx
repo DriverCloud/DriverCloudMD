@@ -13,7 +13,7 @@ import {
     AlertDialogTitle,
     AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
-import { deleteInstructor } from '@/app/(auth)/(dashboard)/instructors/actions';
+import { deleteInstructor } from '@/app/(auth)/dashboard/instructors/actions';
 import { useRouter } from 'next/navigation';
 import { Trash2, Loader2 } from 'lucide-react';
 

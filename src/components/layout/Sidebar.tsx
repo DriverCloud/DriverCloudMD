@@ -9,6 +9,7 @@ import {
     Users, // Instructores
     Car, // Vehiculos
     DollarSign, // Finanzas
+    BarChart3, // Reportes
     Settings, // Configuracion
     LogOut
 } from "lucide-react";
@@ -25,7 +26,7 @@ const menuGroups = [
             },
             {
                 title: "Clases",
-                href: "/classes",
+                href: "/dashboard/classes",
                 icon: Calendar,
             },
         ],
@@ -35,17 +36,17 @@ const menuGroups = [
         items: [
             {
                 title: "Estudiantes",
-                href: "/students",
+                href: "/dashboard/students",
                 icon: GraduationCap,
             },
             {
                 title: "Instructores",
-                href: "/instructors",
+                href: "/dashboard/instructors",
                 icon: Users,
             },
             {
                 title: "Vehículos",
-                href: "/vehicles",
+                href: "/dashboard/vehicles",
                 icon: Car,
             },
         ],
@@ -55,17 +56,23 @@ const menuGroups = [
         items: [
             {
                 title: "Finanzas",
-                href: "/finance",
+                href: "/dashboard/finance",
                 icon: DollarSign,
             },
             {
+                title: "Reportes",
+                href: "/dashboard/reports",
+                icon: BarChart3,
+            },
+            {
                 title: "Configuración",
-                href: "/settings",
+                href: "/dashboard/settings",
                 icon: Settings,
             },
         ],
-    }
+    },
 ];
+
 
 export function Sidebar() {
     const pathname = usePathname();

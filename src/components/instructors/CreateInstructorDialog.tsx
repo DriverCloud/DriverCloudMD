@@ -13,7 +13,7 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { createInstructor } from '@/app/(auth)/(dashboard)/instructors/actions';
+import { createInstructor } from '@/app/(auth)/dashboard/instructors/actions';
 import { useRouter } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
 

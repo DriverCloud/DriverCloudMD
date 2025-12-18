@@ -13,7 +13,7 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { createPackage } from '@/app/(auth)/(dashboard)/students/actions';
+import { createPackage } from '@/app/(auth)/dashboard/students/actions';
 import { Loader2, DollarSign } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 

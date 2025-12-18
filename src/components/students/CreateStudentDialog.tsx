@@ -13,7 +13,9 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { createStudent } from '@/app/(auth)/(dashboard)/students/actions';
+import { Textarea } from "@/components/ui/textarea"
+
+import { createStudent } from '@/app/(auth)/dashboard/students/actions';
 import { useRouter } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
 
@@ -97,26 +99,94 @@ export function CreateStudentDialog() {
                                 disabled={loading}
                             />
                         </div>
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <Label htmlFor="dni">DNI / Identificación</Label>
+                                <Input
+                                    id="dni"
+                                    name="dni"
+                                    placeholder="Ingrese DNI"
+                                    required
+                                    disabled={loading}
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="phone">Teléfono</Label>
+                                <Input
+                                    id="phone"
+                                    name="phone"
+                                    placeholder="+54 11 ..."
+                                    disabled={loading}
+                                />
+                            </div>
+                        </div>
 
                         <div className="space-y-2">
-                            <Label htmlFor="phone">Teléfono</Label>
+                            <Label htmlFor="address">Dirección</Label>
                             <Input
-                                id="phone"
-                                name="phone"
-                                type="tel"
-                                placeholder="+54 11 1234-5678"
+                                id="address"
+                                name="address"
+                                placeholder="Calle, Número, Localidad"
                                 disabled={loading}
                             />
                         </div>
 
+                        <div className="flex items-center space-x-2 py-2">
+                            <div className="flex items-center gap-2">
+                                <Input
+                                    type="checkbox"
+                                    id="has_license"
+                                    name="has_license"
+                                    value="true"
+                                    className="h-4 w-4 w-auto shadow-none border-slate-300"
+                                />
+                                <Label htmlFor="has_license">¿Posee Licencia de Conducir?</Label>
+                            </div>
+                        </div>
+
                         <div className="space-y-2">
-                            <Label htmlFor="license_number">Número de Licencia</Label>
-                            <Input
-                                id="license_number"
-                                name="license_number"
-                                placeholder="B-12345678"
+                            <Label htmlFor="disability_observation">Observaciones / Discapacidad</Label>
+                            <Textarea
+                                id="disability_observation"
+                                name="disability_observation"
+                                placeholder="Detalle cualquier condición relevante o incapacidad (auditiva, motora, etc.)"
                                 disabled={loading}
                             />
+                        </div>
+
+                        <div className="pt-4 border-t">
+                            <h3 className="font-medium mb-3">Contacto de Emergencia</h3>
+                            <div className="grid gap-3">
+                                <div className="space-y-2">
+                                    <Label htmlFor="emergency_contact_name">Nombre Completo</Label>
+                                    <Input
+                                        id="emergency_contact_name"
+                                        name="emergency_contact_name"
+                                        placeholder="María López"
+                                        disabled={loading}
+                                    />
+                                </div>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="space-y-2">
+                                        <Label htmlFor="emergency_contact_relation">Parentesco</Label>
+                                        <Input
+                                            id="emergency_contact_relation"
+                                            name="emergency_contact_relation"
+                                            placeholder="Madre"
+                                            disabled={loading}
+                                        />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label htmlFor="emergency_contact_phone">Teléfono</Label>
+                                        <Input
+                                            id="emergency_contact_phone"
+                                            name="emergency_contact_phone"
+                                            placeholder="+54 11 ..."
+                                            disabled={loading}
+                                        />
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
 

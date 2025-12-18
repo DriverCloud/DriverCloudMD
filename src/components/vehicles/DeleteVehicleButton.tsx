@@ -13,7 +13,7 @@ import {
     AlertDialogTitle,
     AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
-import { deleteVehicle } from '@/app/(auth)/(dashboard)/vehicles/actions';
+import { deleteVehicle } from '@/app/(auth)/dashboard/vehicles/actions';
 import { useRouter } from 'next/navigation';
 import { Trash2, Loader2 } from 'lucide-react';
 

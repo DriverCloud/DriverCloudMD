@@ -13,7 +13,8 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { updateStudent } from '@/app/(auth)/(dashboard)/students/actions';
+import { Textarea } from '@/components/ui/textarea';
+import { updateStudent } from '@/app/(auth)/dashboard/students/actions';
 import { useRouter } from 'next/navigation';
 import { Loader2, Pencil } from 'lucide-react';
 
@@ -24,7 +25,13 @@ interface EditStudentDialogProps {
         last_name: string;
         email: string | null;
         phone: string | null;
-        license_number: string | null;
+        dni: string | null;
+        address: string | null;
+        has_license: boolean | null;
+        disability_observation: string | null;
+        emergency_contact_name?: string | null;
+        emergency_contact_phone?: string | null;
+        emergency_contact_relation?: string | null;
     };
 }
 
@@ -109,25 +116,103 @@ export function EditStudentDialog({ student }: EditStudentDialogProps) {
                             />
                         </div>
 
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <Label htmlFor="dni">DNI / Identificación</Label>
+                                <Input
+                                    id="dni"
+                                    name="dni"
+                                    defaultValue={student.dni || ''}
+                                    placeholder="Ingrese DNI"
+                                    required
+                                    disabled={loading}
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="phone">Teléfono</Label>
+                                <Input
+                                    id="phone"
+                                    name="phone"
+                                    type="tel"
+                                    defaultValue={student.phone || ''}
+                                    placeholder="+54 11 ..."
+                                    disabled={loading}
+                                />
+                            </div>
+                        </div>
+
                         <div className="space-y-2">
-                            <Label htmlFor="phone">Teléfono</Label>
+                            <Label htmlFor="address">Dirección</Label>
                             <Input
-                                id="phone"
-                                name="phone"
-                                type="tel"
-                                defaultValue={student.phone || ''}
+                                id="address"
+                                name="address"
+                                defaultValue={student.address || ''}
+                                placeholder="Calle, Número, Localidad"
                                 disabled={loading}
                             />
                         </div>
 
+                        <div className="flex items-center space-x-2 py-2">
+                            <div className="flex items-center gap-2">
+                                <Input
+                                    type="checkbox"
+                                    id="has_license"
+                                    name="has_license"
+                                    value="true"
+                                    defaultChecked={student.has_license}
+                                    className="h-4 w-4 w-auto shadow-none border-slate-300"
+                                />
+                                <Label htmlFor="has_license">¿Posee Licencia de Conducir?</Label>
+                            </div>
+                        </div>
+
                         <div className="space-y-2">
-                            <Label htmlFor="license_number">Número de Licencia</Label>
-                            <Input
-                                id="license_number"
-                                name="license_number"
-                                defaultValue={student.license_number || ''}
+                            <Label htmlFor="disability_observation">Observaciones / Discapacidad</Label>
+                            <Textarea
+                                id="disability_observation"
+                                name="disability_observation"
+                                defaultValue={student.disability_observation || ''}
+                                placeholder="Detalle cualquier condición relevante o incapacidad"
                                 disabled={loading}
                             />
+                        </div>
+
+                        <div className="pt-4 border-t">
+                            <h3 className="font-medium mb-3">Contacto de Emergencia</h3>
+                            <div className="grid gap-3">
+                                <div className="space-y-2">
+                                    <Label htmlFor="emergency_contact_name">Nombre Completo</Label>
+                                    <Input
+                                        id="emergency_contact_name"
+                                        name="emergency_contact_name"
+                                        defaultValue={student.emergency_contact_name || ''}
+                                        placeholder="María López"
+                                        disabled={loading}
+                                    />
+                                </div>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="space-y-2">
+                                        <Label htmlFor="emergency_contact_relation">Parentesco</Label>
+                                        <Input
+                                            id="emergency_contact_relation"
+                                            name="emergency_contact_relation"
+                                            defaultValue={student.emergency_contact_relation || ''}
+                                            placeholder="Madre"
+                                            disabled={loading}
+                                        />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label htmlFor="emergency_contact_phone">Teléfono</Label>
+                                        <Input
+                                            id="emergency_contact_phone"
+                                            name="emergency_contact_phone"
+                                            defaultValue={student.emergency_contact_phone || ''}
+                                            placeholder="+54 11 ..."
+                                            disabled={loading}
+                                        />
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
 

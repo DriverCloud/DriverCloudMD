@@ -20,7 +20,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
-import { createPayment } from '@/app/(auth)/(dashboard)/finance/actions';
+import { createPayment } from '@/app/(auth)/dashboard/finance/actions';
 import { useRouter } from 'next/navigation';
 import { Loader2, Plus, DollarSign } from 'lucide-react';
 

@@ -28,9 +28,13 @@ export function ClassHistory({ appointments }: ClassHistoryProps) {
                         </thead>
                         <tbody>
                             {appointments.map((apt) => {
-                                const date = new Date(apt.date_time_start); // Assuming start time
-                                const dateStr = date.toLocaleDateString();
-                                const timeStr = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                                // Parse date: scheduled_date is YYYY-MM-DD
+                                const [year, month, day] = apt.scheduled_date.split('-');
+                                const date = new Date(year, month - 1, day);
+                                const dateStr = date.toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+
+                                // Time is already in HH:MM:SS format, generally we want HH:MM
+                                const timeStr = apt.start_time.slice(0, 5);
 
                                 return (
                                     <tr key={apt.id} className="border-b hover:bg-muted/50">

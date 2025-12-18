@@ -1,5 +1,6 @@
 import { Sidebar } from "@/components/layout/Sidebar";
 import { Header } from "@/components/layout/Header";
+import { SessionRefresh } from "@/components/auth/SessionRefresh";
 
 export default function AuthLayout({
     children,
@@ -8,6 +9,7 @@ export default function AuthLayout({
 }) {
     return (
         <div className="flex min-h-screen bg-muted/40">
+            <SessionRefresh />
             <Sidebar />
             <div className="flex flex-col flex-1 h-screen overflow-hidden">
                 <Header />
@@ -18,3 +20,4 @@ export default function AuthLayout({
         </div>
     );
 }
+
