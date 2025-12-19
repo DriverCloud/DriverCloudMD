@@ -8,6 +8,15 @@ import { DeleteInstructorButton } from '@/components/instructors/DeleteInstructo
 export default async function InstructorsPage() {
     const supabase = await createClient();
 
+    // Get User Role
+    const { data: { user } } = await supabase.auth.getUser();
+    let userRole = null;
+    if (user) {
+        const { data: membership } = await supabase.from('memberships').select('role').eq('user_id', user.id).single();
+        userRole = membership?.role;
+    }
+    const isInstructor = userRole === 'instructor';
+
     // Fetch all active instructors
     const { data: instructors, error } = await supabase
         .from('instructors')
@@ -31,10 +40,14 @@ export default async function InstructorsPage() {
                     <p className="text-muted-foreground mt-1">{totalInstructors} instructores activos</p>
                 </div>
                 <div className="flex gap-3">
-                    <Button variant="outline">
-                        Exportar Lista
-                    </Button>
-                    <CreateInstructorDialog />
+                    {!isInstructor && (
+                        <>
+                            <Button variant="outline">
+                                Exportar Lista
+                            </Button>
+                            <CreateInstructorDialog />
+                        </>
+                    )}
                 </div>
             </div>
 
@@ -49,7 +62,7 @@ export default async function InstructorsPage() {
                                 <th className="text-left p-4 font-semibold text-sm">Teléfono</th>
                                 <th className="text-left p-4 font-semibold text-sm">Licencia</th>
                                 <th className="text-left p-4 font-semibold text-sm">Estado</th>
-                                <th className="text-right p-4 font-semibold text-sm">Acciones</th>
+                                {!isInstructor && <th className="text-right p-4 font-semibold text-sm">Acciones</th>}
                             </tr>
                         </thead>
                         <tbody className="divide-y">
@@ -98,18 +111,20 @@ export default async function InstructorsPage() {
                                                     {instructor.status === 'active' ? 'Activo' : instructor.status}
                                                 </span>
                                             </td>
-                                            <td className="p-4">
-                                                <div className="flex justify-end gap-2">
-                                                    <EditInstructorDialog instructor={instructor} />
-                                                    <DeleteInstructorButton instructorId={instructor.id} instructorName={`${instructor.first_name} ${instructor.last_name}`} />
-                                                </div>
-                                            </td>
+                                            {!isInstructor && (
+                                                <td className="p-4">
+                                                    <div className="flex justify-end gap-2">
+                                                        <EditInstructorDialog instructor={instructor} />
+                                                        <DeleteInstructorButton instructorId={instructor.id} instructorName={`${instructor.first_name} ${instructor.last_name}`} />
+                                                    </div>
+                                                </td>
+                                            )}
                                         </tr>
                                     );
                                 })
                             ) : (
                                 <tr>
-                                    <td colSpan={6} className="p-12 text-center">
+                                    <td colSpan={!isInstructor ? 6 : 5} className="p-12 text-center">
                                         <UserCheck className="h-12 w-12 mx-auto mb-4 text-muted-foreground opacity-50" />
                                         <p className="text-muted-foreground font-medium">No hay instructores registrados</p>
                                         <p className="text-sm text-muted-foreground mt-1">Agrega tu primer instructor para comenzar</p>

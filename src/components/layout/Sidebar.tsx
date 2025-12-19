@@ -11,7 +11,9 @@ import {
     DollarSign, // Finanzas
     BarChart3, // Reportes
     Settings, // Configuracion
-    LogOut
+    LogOut,
+    TrendingUp, // Progreso
+    CreditCard // Pagos
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -74,8 +76,74 @@ const menuGroups = [
 ];
 
 
-export function Sidebar() {
+
+interface SidebarProps {
+    role?: string | null;
+}
+
+export function Sidebar({ role }: SidebarProps) {
     const pathname = usePathname();
+
+    // Define restricted view: Instructors only see simplified menu
+    // We filter the GROUPS and ITEMS
+    const filteredGroups = menuGroups.map(group => {
+        if (role === 'instructor') {
+            // Instructor Filter Logic
+            if (group.title === "Administración") {
+                const allowedAdminItems = ['Configuración'];
+                const newItems = group.items.filter(i => allowedAdminItems.includes(i.title));
+                if (newItems.length === 0) return null;
+                return { ...group, items: newItems };
+            }
+            if (group.title === "Principal") {
+                return group;
+            }
+            if (group.title === "Recursos") {
+                const allowedResourceItems = ['Estudiantes', 'Instructores'];
+                const newItems = group.items.filter(i => allowedResourceItems.includes(i.title));
+                if (newItems.length === 0) return null;
+                return { ...group, items: newItems };
+            }
+            return group;
+        }
+
+        if (role === 'student') {
+            // Student Filter Logic
+            if (group.title === "Principal") {
+                // Return generic items but with mapped URLs/Icons if needed? 
+                // Or construct a specific Student Group?
+                // It's cleaner to return a custom group or filter existing ones if they match.
+                // Our current nav structure is Admin-centric.
+                // Let's create a custom list for students by overriding the items.
+
+                // If we want "Mis Clases", we can map to /dashboard/classes (which we will adapt view for)
+                return {
+                    title: "Mi Aprendizaje",
+                    items: [
+                        { title: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+                        { title: "Mis Clases", href: "/dashboard/classes", icon: Calendar },
+                        { title: "Mi Progreso", href: "/dashboard/progress", icon: TrendingUp },
+                    ]
+                };
+            }
+            if (group.title === "Administración") {
+                // Students see Payments/Profile
+                return {
+                    title: "Mi Cuenta",
+                    items: [
+                        { title: "Pagos", href: "/dashboard/payments", icon: CreditCard },
+                        { title: "Configuración", href: "/dashboard/settings", icon: Settings },
+                    ]
+                };
+            }
+            // Hide Resources
+            return null;
+        }
+
+        // Default (Admin/Owner/Secretary): Show everything
+        return group;
+    }).filter(group => group !== null);
+
 
     return (
         <aside className="flex flex-col w-72 h-full bg-background border-r border-border flex-shrink-0 transition-all duration-300">
@@ -89,13 +157,13 @@ export function Sidebar() {
 
             {/* Navigation */}
             <div className="flex-1 overflow-y-auto py-6 px-4 space-y-6">
-                {menuGroups.map((group, groupIndex) => (
+                {filteredGroups.map((group, groupIndex) => (
                     <div key={groupIndex}>
                         <h3 className="px-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
-                            {group.title}
+                            {group!.title}
                         </h3>
                         <div className="flex flex-col gap-1">
-                            {group.items.map((item, itemIndex) => {
+                            {group!.items.map((item, itemIndex) => {
                                 const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`);
                                 return (
                                     <Link
@@ -126,8 +194,8 @@ export function Sidebar() {
                         style={{ backgroundImage: 'url("https://lh3.googleusercontent.com/aida-public/AB6AXuB4dmGbXMOsUvYf4_qY56FnlnpxBQQdLSD2L8rTOizctCsJ6lCyxsWD9osnC3zbIz2JGciSpFABvemOVUQ7guCCck4dZ-b2VB9D4VZRDKmSl58UF97y2j9W9YMGt7dAYpPcJ4PAStEzTTcyjC2wZRDbbjUL1AvjsZWuMUMJCos9xZ7S_FRQ2vRspedwgcWWhm5e36IoOOfFR1wNrk747oQ40WOPRRQVGGcqkPrSXO6AaJFhU7kIjtsPXJUiVw_Zu6UctmAs_As7QDum")' }}
                     />
                     <div className="flex flex-col overflow-hidden">
-                        <p className="text-sm font-semibold text-foreground truncate">Roberto G.</p>
-                        <p className="text-xs text-muted-foreground truncate">Administrador</p>
+                        <p className="text-sm font-semibold text-foreground truncate">Usuario</p>
+                        <p className="text-xs text-muted-foreground truncate capitalize">{role || 'Cargando...'}</p>
                     </div>
                 </div>
                 <button
@@ -146,3 +214,4 @@ export function Sidebar() {
         </aside>
     );
 }
+

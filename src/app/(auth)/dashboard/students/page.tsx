@@ -19,6 +19,15 @@ import {
 export default async function StudentsPage() {
     const supabase = await createClient();
 
+    // Get User Role
+    const { data: { user } } = await supabase.auth.getUser();
+    let userRole = null;
+    if (user) {
+        const { data: membership } = await supabase.from('memberships').select('role').eq('user_id', user.id).single();
+        userRole = membership?.role;
+    }
+    const isInstructor = userRole === 'instructor';
+
     // Fetch students
     const { data: students, error } = await supabase
         .from('students')
@@ -54,10 +63,14 @@ export default async function StudentsPage() {
                     <p className="text-muted-foreground mt-1">{totalStudents} estudiantes activos</p>
                 </div>
                 <div className="flex gap-3">
-                    <Button variant="outline">
-                        Exportar Lista
-                    </Button>
-                    <CreateStudentDialog />
+                    {!isInstructor && (
+                        <>
+                            <Button variant="outline">
+                                Exportar Lista
+                            </Button>
+                            <CreateStudentDialog />
+                        </>
+                    )}
                 </div>
             </div>
 
@@ -72,7 +85,7 @@ export default async function StudentsPage() {
                             <TableHead>Estado</TableHead>
                             <TableHead>Saldo</TableHead>
                             <TableHead>Fecha de Registro</TableHead>
-                            <TableHead className="text-right">Acciones</TableHead>
+                            {!isInstructor && <TableHead className="text-right">Acciones</TableHead>}
                         </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -134,19 +147,21 @@ export default async function StudentsPage() {
                                                 <span>{formattedDate}</span>
                                             </div>
                                         </TableCell>
-                                        <TableCell className="text-right">
-                                            <div className="flex justify-end gap-2">
-                                                <SellPackageDialog studentId={student.id} studentName={`${student.first_name} ${student.last_name}`} />
-                                                <EditStudentDialog student={student} />
-                                                <DeleteStudentButton studentId={student.id} studentName={`${student.first_name} ${student.last_name}`} />
-                                            </div>
-                                        </TableCell>
+                                        {!isInstructor && (
+                                            <TableCell className="text-right">
+                                                <div className="flex justify-end gap-2">
+                                                    <SellPackageDialog studentId={student.id} studentName={`${student.first_name} ${student.last_name}`} />
+                                                    <EditStudentDialog student={student} />
+                                                    <DeleteStudentButton studentId={student.id} studentName={`${student.first_name} ${student.last_name}`} />
+                                                </div>
+                                            </TableCell>
+                                        )}
                                     </TableRow>
                                 );
                             })
                         ) : (
                             <TableRow>
-                                <TableCell colSpan={7} className="h-24 text-center">
+                                <TableCell colSpan={!isInstructor ? 7 : 6} className="h-24 text-center">
                                     <div className="flex flex-col items-center justify-center p-4">
                                         <Users className="h-10 w-10 text-muted-foreground opacity-50 mb-2" />
                                         <p className="text-muted-foreground">No hay estudiantes registrados</p>

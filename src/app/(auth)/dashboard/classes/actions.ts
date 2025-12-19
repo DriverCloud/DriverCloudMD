@@ -4,13 +4,13 @@ import { createClient } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 
-export async function getAppointments(startDate: string, endDate: string) {
+export async function getAppointments(startDate: string, endDate: string, studentId?: string) {
     const supabase = await createClient();
 
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return { success: false, error: 'No autenticado' };
 
-    const { data: appointments, error } = await supabase
+    let query = supabase
         .from('appointments')
         .select(`
             *,
@@ -20,7 +20,14 @@ export async function getAppointments(startDate: string, endDate: string) {
             class_type:class_types(name, duration_minutes)
         `)
         .gte('scheduled_date', startDate)
-        .lte('scheduled_date', endDate)
+        .lte('scheduled_date', endDate);
+
+    // Optional Filter by Student
+    if (studentId) {
+        query = query.eq('student_id', studentId);
+    }
+
+    const { data: appointments, error } = await query
         .order('scheduled_date', { ascending: true })
         .order('start_time', { ascending: true });
 
@@ -265,6 +272,23 @@ export async function cancelAppointment(appointmentId: string) {
 
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return { success: false, error: 'No autenticado' };
+
+    // Link user to role/person
+    const { data: membership } = await supabase.from('memberships').select('role').eq('user_id', user.id).single();
+    if (!membership) return { success: false, error: 'Sin membresía' };
+
+    // Get appointment
+    const { data: appointment } = await supabase.from('appointments').select('*').eq('id', appointmentId).single();
+    if (!appointment) return { success: false, error: 'Turno no encontrado' };
+
+    // Authorization Check
+    if (membership.role === 'student') {
+        const { data: student } = await supabase.from('students').select('id').eq('user_id', user.id).single();
+        if (!student || student.id !== appointment.student_id) {
+            return { success: false, error: 'No tienes permiso para cancelar este turno' };
+        }
+    }
+    // Instructors/Admins can cancel mostly any (logic simplified for now)
 
     const { data, error } = await supabase
         .from('appointments')

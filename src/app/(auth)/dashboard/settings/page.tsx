@@ -2,9 +2,23 @@ import { getSettings } from './actions';
 import { SchoolProfileForm } from '@/components/settings/SchoolProfileForm';
 import { BookingPoliciesForm } from '@/components/settings/BookingPoliciesForm';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Building, CalendarClock } from 'lucide-react';
+import { Building, CalendarClock, Users } from 'lucide-react';
+import UsersPage from './users/page';
+import { createClient } from '@/lib/supabase/server';
+import { redirect } from 'next/navigation';
 
 export default async function SettingsPage() {
+    const supabase = await createClient();
+
+    // Check Role
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+        const { data: membership } = await supabase.from('memberships').select('role').eq('user_id', user.id).single();
+        if (membership?.role === 'instructor') {
+            redirect('/dashboard');
+        }
+    }
+
     const { success, data, error } = await getSettings();
 
     if (!success || !data) {
@@ -29,7 +43,7 @@ export default async function SettingsPage() {
             </div>
 
             <Tabs defaultValue="profile" className="w-full">
-                <TabsList className="grid w-full grid-cols-2 lg:w-[400px]">
+                <TabsList className="grid w-full grid-cols-3 lg:w-[600px]">
                     <TabsTrigger value="profile" className="gap-2">
                         <Building className="h-4 w-4" />
                         Perfil
@@ -37,6 +51,10 @@ export default async function SettingsPage() {
                     <TabsTrigger value="policies" className="gap-2">
                         <CalendarClock className="h-4 w-4" />
                         Políticas
+                    </TabsTrigger>
+                    <TabsTrigger value="users" className="gap-2">
+                        <Users className="h-4 w-4" />
+                        Usuarios
                     </TabsTrigger>
                 </TabsList>
 
@@ -46,6 +64,10 @@ export default async function SettingsPage() {
 
                 <TabsContent value="policies" className="mt-6">
                     <BookingPoliciesForm settings={settings} />
+                </TabsContent>
+
+                <TabsContent value="users" className="mt-6">
+                    <UsersPage />
                 </TabsContent>
             </Tabs>
         </div>
