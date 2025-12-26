@@ -1,11 +1,12 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Calendar, Clock, MapPin, AlertCircle, XCircle } from "lucide-react";
+import { Calendar, Clock, MapPin, AlertCircle, XCircle, Car } from "lucide-react";
 import {
     AlertDialog,
     AlertDialogAction,
@@ -24,6 +25,7 @@ interface StudentClassesViewProps {
 }
 
 export function StudentClassesView({ appointments, loading }: StudentClassesViewProps) {
+    const router = useRouter();
     if (loading) {
         return <div className="p-8 text-center text-muted-foreground">Cargando tus clases...</div>;
     }
@@ -52,7 +54,7 @@ export function StudentClassesView({ appointments, loading }: StudentClassesView
                 <TabsContent value="upcoming" className="mt-6 flex flex-col gap-4">
                     {upcoming.length > 0 ? (
                         upcoming.map((apt) => (
-                            <ClassCard key={apt.id} appointment={apt} isUpcoming={true} />
+                            <ClassCard key={apt.id} appointment={apt} isUpcoming={true} router={router} />
                         ))
                     ) : (
                         <EmptyState message="No tienes clases agendadas próximamente." />
@@ -62,7 +64,7 @@ export function StudentClassesView({ appointments, loading }: StudentClassesView
                 <TabsContent value="history" className="mt-6 flex flex-col gap-4">
                     {past.length > 0 ? (
                         past.map((apt) => (
-                            <ClassCard key={apt.id} appointment={apt} isUpcoming={false} />
+                            <ClassCard key={apt.id} appointment={apt} isUpcoming={false} router={router} />
                         ))
                     ) : (
                         <EmptyState message="No tienes clases pasadas." />
@@ -74,7 +76,7 @@ export function StudentClassesView({ appointments, loading }: StudentClassesView
 }
 
 
-function ClassCard({ appointment, isUpcoming }: { appointment: any, isUpcoming: boolean }) {
+function ClassCard({ appointment, isUpcoming, router }: { appointment: any, isUpcoming: boolean, router: any }) {
     const [cancelLoading, setCancelLoading] = useState(false);
 
     async function handleCancel() {
@@ -84,7 +86,7 @@ function ClassCard({ appointment, isUpcoming }: { appointment: any, isUpcoming: 
             const result = await cancelAppointment(appointment.id);
 
             if (result.success) {
-                window.location.reload();
+                router.refresh();
             } else {
                 alert(result.error);
             }
@@ -134,6 +136,10 @@ function ClassCard({ appointment, isUpcoming }: { appointment: any, isUpcoming: 
                             <div className="flex items-center gap-1">
                                 <span className="font-medium text-foreground">Instructor:</span>
                                 <span>{appointment.instructor?.first_name} {appointment.instructor?.last_name}</span>
+                            </div>
+                            <div className="flex items-center gap-1">
+                                <Car className="h-4 w-4" />
+                                <span>{appointment.vehicle ? `${appointment.vehicle.brand} ${appointment.vehicle.model}` : '-'}</span>
                             </div>
                         </div>
                     </div>

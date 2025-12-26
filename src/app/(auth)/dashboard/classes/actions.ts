@@ -154,6 +154,22 @@ export async function createAppointment(formData: FormData) {
         return { success: false, error: conflictCheck.error };
     }
 
+    // PACKAGE VALIDATION - Check if student has credits
+    const { data: activePackage, error: pkgError } = await supabase
+        .from('student_packages')
+        .select('id, credits')
+        .eq('student_id', studentId)
+        .eq('status', 'active')
+        .gt('credits', 0)
+        .order('created_at', { ascending: true })
+        .limit(1)
+        .maybeSingle();
+
+    if (pkgError || !activePackage) {
+        return { success: false, error: 'El estudiante no tiene créditos disponibles o paquetes activos.' };
+    }
+
+
     const { data, error } = await supabase.from('appointments').insert({
         school_id: membership.school_id,
         owner_id: membership.owner_id,
@@ -172,6 +188,18 @@ export async function createAppointment(formData: FormData) {
     if (error) {
         console.error('Error creating appointment:', error);
         return { success: false, error: 'Error al agendar el turno' };
+    }
+
+    // DECREMENT CREDITS
+    const { error: updateError } = await supabase
+        .from('student_packages')
+        .update({ credits: activePackage.credits - 1 })
+        .eq('id', activePackage.id);
+
+    if (updateError) {
+        console.error('Error updating credits:', updateError);
+        // Note: appointment is already created. For a robust system, this should be in a transaction.
+        // For MVP, we at least log the error.
     }
 
     revalidatePath('/dashboard/classes');

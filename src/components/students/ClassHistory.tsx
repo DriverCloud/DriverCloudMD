@@ -44,7 +44,7 @@ export function ClassHistory({ appointments }: ClassHistoryProps) {
                                             {apt.instructor ? `${apt.instructor.first_name} ${apt.instructor.last_name}` : '-'}
                                         </td>
                                         <td className="p-3 text-muted-foreground">
-                                            {apt.vehicle?.name || '-'}
+                                            {apt.vehicle ? `${apt.vehicle.brand} ${apt.vehicle.model}` : '-'}
                                         </td>
                                         <td className="p-3">
                                             {apt.class_type?.name || 'Clase Práctica'}

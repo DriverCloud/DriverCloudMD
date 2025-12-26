@@ -37,8 +37,8 @@ export async function middleware(request: NextRequest) {
     // Protected Routes Logic
     const path = request.nextUrl.pathname
 
-    // If user is NOT logged in and tries to access dashboard
-    if (!user && path.startsWith('/dashboard')) {
+    // If user is NOT logged in and tries to access protected routes
+    if (!user && (path.startsWith('/dashboard') || path.startsWith('/portal'))) {
         const url = request.nextUrl.clone()
         url.pathname = '/login'
         return NextResponse.redirect(url)
