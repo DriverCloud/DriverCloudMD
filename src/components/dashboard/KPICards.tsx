@@ -29,7 +29,7 @@ export function KPICards() {
                 .select('status');
 
             const totalVehicles = vehicles?.length || 0;
-            const available = vehicles?.filter(v => v.status === 'available').length || 0;
+            const available = vehicles?.filter(v => v.status === 'active').length || 0;
 
             // Fetch Real Income
             const income = await paymentsService.getIncomeStats();

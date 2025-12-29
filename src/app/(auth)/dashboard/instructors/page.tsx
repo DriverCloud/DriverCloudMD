@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
+import { Plus, Pencil, BadgeInfo, Mail, Phone } from "lucide-react";
 import {
     Dialog,
     DialogContent,
@@ -13,6 +13,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { InstructorForm } from "@/features/instructors/components/InstructorForm";
 import { Instructor, instructorsService } from "@/features/instructors/service";
+import { InstructorDetailsDialog } from "@/components/instructors/InstructorDetailsDialog";
 
 export default function InstructorsPage() {
     const [instructors, setInstructors] = useState<Instructor[]>([]);
@@ -61,22 +62,43 @@ export default function InstructorsPage() {
             ) : (
                 <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                     {instructors.map((instructor) => (
-                        <Card key={instructor.id}>
-                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                <CardTitle className="text-base font-bold">
-                                    {instructor.first_name} {instructor.last_name}
-                                </CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                                <div className="text-sm font-medium mb-1">Licencia: {instructor.license_number}</div>
-                                <p className="text-xs text-muted-foreground">
-                                    {instructor.email}
-                                </p>
-                                <p className="text-xs text-muted-foreground">
-                                    {instructor.phone}
-                                </p>
-                            </CardContent>
-                        </Card>
+                        <InstructorDetailsDialog key={instructor.id} instructor={instructor}>
+                            <Card className="relative group hover:border-primary transition-all duration-300 cursor-pointer overflow-hidden shadow-sm hover:shadow-md">
+                                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                    <CardTitle className="text-lg font-bold">
+                                        {instructor.first_name} {instructor.last_name}
+                                    </CardTitle>
+                                    <div className="text-primary opacity-0 group-hover:opacity-100 transition-opacity">
+                                        <BadgeInfo className="h-5 w-5" />
+                                    </div>
+                                </CardHeader>
+                                <CardContent>
+                                    <div className="space-y-4">
+                                        <div className="grid grid-cols-2 gap-2 text-xs">
+                                            <div>
+                                                <p className="text-muted-foreground uppercase text-[10px] tracking-tight">Licencia</p>
+                                                <p className="font-medium truncate">{instructor.license_number}</p>
+                                            </div>
+                                            {instructor.cuil && (
+                                                <div>
+                                                    <p className="text-muted-foreground uppercase text-[10px] tracking-tight">CUIL</p>
+                                                    <p className="font-medium truncate">{instructor.cuil}</p>
+                                                </div>
+                                            )}
+                                        </div>
+
+                                        <div className="pt-2 border-t flex flex-col gap-1">
+                                            <p className="text-xs text-muted-foreground truncate flex items-center gap-1">
+                                                <Mail className="h-3 w-3" /> {instructor.email}
+                                            </p>
+                                            <p className="text-xs text-muted-foreground truncate flex items-center gap-1">
+                                                <Phone className="h-3 w-3" /> {instructor.phone}
+                                            </p>
+                                        </div>
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        </InstructorDetailsDialog>
                     ))}
                 </div>
             )}

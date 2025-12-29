@@ -4,7 +4,7 @@ import { createClient } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 
-export async function getAppointments(startDate: string, endDate: string, studentId?: string) {
+export async function getAppointments(startDate: string, endDate: string, studentId?: string, instructorId?: string, vehicleId?: string) {
     const supabase = await createClient();
 
     const { data: { user } } = await supabase.auth.getUser();
@@ -13,18 +13,34 @@ export async function getAppointments(startDate: string, endDate: string, studen
     let query = supabase
         .from('appointments')
         .select(`
-            *,
+            id,
+            scheduled_date,
+            start_time,
+            end_time,
+            status,
+            student_id,
+            instructor_id,
+            vehicle_id,
+            class_type_id,
             student:students(first_name, last_name),
             instructor:instructors(first_name, last_name),
             vehicle:vehicles(brand, model, license_plate),
-            class_type:class_types(name, duration_minutes)
+            class_type:class_types(name, duration_minutes),
+            package:student_packages(id, total_credits),
+            class_number
         `)
         .gte('scheduled_date', startDate)
         .lte('scheduled_date', endDate);
 
-    // Optional Filter by Student
+    // Optional Filters
     if (studentId) {
         query = query.eq('student_id', studentId);
+    }
+    if (instructorId) {
+        query = query.eq('instructor_id', instructorId);
+    }
+    if (vehicleId) {
+        query = query.eq('vehicle_id', vehicleId);
     }
 
     const { data: appointments, error } = await query
@@ -157,7 +173,7 @@ export async function createAppointment(formData: FormData) {
     // PACKAGE VALIDATION - Check if student has credits
     const { data: activePackage, error: pkgError } = await supabase
         .from('student_packages')
-        .select('id, credits')
+        .select('id, credits, total_credits')
         .eq('student_id', studentId)
         .eq('status', 'active')
         .gt('credits', 0)
@@ -169,6 +185,22 @@ export async function createAppointment(formData: FormData) {
         return { success: false, error: 'El estudiante no tiene créditos disponibles o paquetes activos.' };
     }
 
+    // DECREMENT CREDITS FIRST
+    const { error: updateError } = await supabase
+        .from('student_packages')
+        .update({ credits: activePackage.credits - 1 })
+        .eq('id', activePackage.id);
+
+    if (updateError) {
+        console.error('Error updating credits:', updateError);
+        return { success: false, error: 'Error al consumir los créditos del alumno.' };
+    }
+
+
+    // Calculate class number: (Total - Remaining) + 1
+    // Example: Total 10, Remaining 10 -> Class 1
+    // Example: Total 10, Remaining 9 -> Class 2
+    const classNumber = (activePackage.total_credits || activePackage.credits) - activePackage.credits + 1;
 
     const { data, error } = await supabase.from('appointments').insert({
         school_id: membership.school_id,
@@ -182,24 +214,20 @@ export async function createAppointment(formData: FormData) {
         start_time: startTime,
         end_time: endTime,
         status: 'scheduled',
-        created_by: user.id
+        created_by: user.id,
+        package_id: activePackage.id,
+        class_number: classNumber
     }).select().single();
 
     if (error) {
         console.error('Error creating appointment:', error);
+        // ROLLBACK CREDIT (Attempt to restore credit if appointment failed)
+        await supabase
+            .from('student_packages')
+            .update({ credits: activePackage.credits })
+            .eq('id', activePackage.id);
+
         return { success: false, error: 'Error al agendar el turno' };
-    }
-
-    // DECREMENT CREDITS
-    const { error: updateError } = await supabase
-        .from('student_packages')
-        .update({ credits: activePackage.credits - 1 })
-        .eq('id', activePackage.id);
-
-    if (updateError) {
-        console.error('Error updating credits:', updateError);
-        // Note: appointment is already created. For a robust system, this should be in a transaction.
-        // For MVP, we at least log the error.
     }
 
     revalidatePath('/dashboard/classes');

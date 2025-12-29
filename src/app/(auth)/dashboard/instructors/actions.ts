@@ -29,6 +29,11 @@ export async function createInstructor(formData: FormData) {
     const lastName = formData.get('last_name') as string;
     const email = formData.get('email') as string;
     const phone = formData.get('phone') as string;
+    const birthDate = formData.get('birth_date') as string;
+    const cuil = formData.get('cuil') as string;
+    const address = formData.get('address') as string;
+    const emergencyContactName = formData.get('emergency_contact_name') as string;
+    const emergencyContactPhone = formData.get('emergency_contact_phone') as string;
     const licenseNumber = formData.get('license_number') as string;
     const licenseExpiry = formData.get('license_expiry') as string;
 
@@ -48,6 +53,11 @@ export async function createInstructor(formData: FormData) {
             last_name: lastName,
             email: email || null,
             phone: phone || null,
+            birth_date: birthDate || null,
+            cuil: cuil || null,
+            address: address || null,
+            emergency_contact_name: emergencyContactName || null,
+            emergency_contact_phone: emergencyContactPhone || null,
             license_number: licenseNumber || null,
             license_expiry: licenseExpiry || null,
             status: 'active'
@@ -81,6 +91,11 @@ export async function updateInstructor(instructorId: string, formData: FormData)
     const lastName = formData.get('last_name') as string;
     const email = formData.get('email') as string;
     const phone = formData.get('phone') as string;
+    const birthDate = formData.get('birth_date') as string;
+    const cuil = formData.get('cuil') as string;
+    const address = formData.get('address') as string;
+    const emergencyContactName = formData.get('emergency_contact_name') as string;
+    const emergencyContactPhone = formData.get('emergency_contact_phone') as string;
     const licenseNumber = formData.get('license_number') as string;
     const licenseExpiry = formData.get('license_expiry') as string;
 
@@ -97,6 +112,11 @@ export async function updateInstructor(instructorId: string, formData: FormData)
             last_name: lastName,
             email: email || null,
             phone: phone || null,
+            birth_date: birthDate || null,
+            cuil: cuil || null,
+            address: address || null,
+            emergency_contact_name: emergencyContactName || null,
+            emergency_contact_phone: emergencyContactPhone || null,
             license_number: licenseNumber || null,
             license_expiry: licenseExpiry || null,
         })

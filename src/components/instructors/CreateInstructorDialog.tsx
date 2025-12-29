@@ -111,22 +111,80 @@ export function CreateInstructorDialog() {
 
                         <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-2">
-                                <Label htmlFor="license_number">Número de Licencia</Label>
+                                <Label htmlFor="birth_date">Fecha de Nacimiento</Label>
                                 <Input
-                                    id="license_number"
-                                    name="license_number"
-                                    placeholder="B-12345678"
+                                    id="birth_date"
+                                    name="birth_date"
+                                    type="date"
                                     disabled={loading}
                                 />
                             </div>
                             <div className="space-y-2">
-                                <Label htmlFor="license_expiry">Vencimiento</Label>
+                                <Label htmlFor="cuil">CUIL</Label>
                                 <Input
-                                    id="license_expiry"
-                                    name="license_expiry"
-                                    type="date"
+                                    id="cuil"
+                                    name="cuil"
+                                    placeholder="20-12345678-9"
                                     disabled={loading}
                                 />
+                            </div>
+                        </div>
+
+                        <div className="space-y-2">
+                            <Label htmlFor="address">Dirección</Label>
+                            <Input
+                                id="address"
+                                name="address"
+                                placeholder="Calle Falsa 123, Quilmes"
+                                disabled={loading}
+                            />
+                        </div>
+
+                        <div className="space-y-2">
+                            <Label className="text-sm font-semibold text-primary">Contacto de Emergencia</Label>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <Label htmlFor="emergency_contact_name">Nombre</Label>
+                                    <Input
+                                        id="emergency_contact_name"
+                                        name="emergency_contact_name"
+                                        placeholder="Nombre del contacto"
+                                        disabled={loading}
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="emergency_contact_phone">Teléfono</Label>
+                                    <Input
+                                        id="emergency_contact_phone"
+                                        name="emergency_contact_phone"
+                                        placeholder="Teléfono alternativo"
+                                        disabled={loading}
+                                    />
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="space-y-2">
+                            <Label className="text-sm font-semibold text-primary">Licencia de Conducir</Label>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <Label htmlFor="license_number">Número</Label>
+                                    <Input
+                                        id="license_number"
+                                        name="license_number"
+                                        placeholder="B-12345678"
+                                        disabled={loading}
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="license_expiry">Vencimiento</Label>
+                                    <Input
+                                        id="license_expiry"
+                                        name="license_expiry"
+                                        type="date"
+                                        disabled={loading}
+                                    />
+                                </div>
                             </div>
                         </div>
                     </div>

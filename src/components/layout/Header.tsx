@@ -1,4 +1,5 @@
 import { Bell, Search, LogOut, User, Settings } from "lucide-react";
+import { SearchBar } from "./SearchBar";
 import { getNotifications } from "@/components/notifications/actions";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
 import { DashboardBreadcrumb } from "./DashboardBreadcrumb";
@@ -29,16 +30,7 @@ export async function Header() {
 
             {/* Center: Search */}
             <div className="flex-1 max-w-xl px-4 md:px-12">
-                <div className="relative group">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                        <Search className="h-5 w-5 text-muted-foreground group-focus-within:text-primary transition-colors" />
-                    </div>
-                    <input
-                        type="text"
-                        className="block w-full pl-10 pr-3 py-2 border-none rounded-lg leading-5 bg-muted/50 text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:bg-background sm:text-sm transition-all"
-                        placeholder="Buscar estudiante..."
-                    />
-                </div>
+                <SearchBar />
             </div>
 
             {/* Right: Actions */}

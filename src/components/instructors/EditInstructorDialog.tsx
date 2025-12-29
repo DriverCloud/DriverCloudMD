@@ -22,14 +22,20 @@ interface EditInstructorDialogProps {
         id: string;
         first_name: string;
         last_name: string;
-        email: string | null;
-        phone: string | null;
-        license_number: string | null;
-        license_expiry: string | null;
+        email?: string;
+        phone?: string;
+        birth_date?: string;
+        cuil?: string;
+        address?: string;
+        emergency_contact_name?: string;
+        emergency_contact_phone?: string;
+        license_number?: string;
+        license_expiry?: string;
     };
+    children?: React.ReactNode;
 }
 
-export function EditInstructorDialog({ instructor }: EditInstructorDialogProps) {
+export function EditInstructorDialog({ instructor, children }: EditInstructorDialogProps) {
     const [open, setOpen] = useState(false);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -56,9 +62,11 @@ export function EditInstructorDialog({ instructor }: EditInstructorDialogProps) 
     return (
         <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
-                <Button variant="ghost" size="sm">
-                    <Pencil className="h-4 w-4" />
-                </Button>
+                {children || (
+                    <Button variant="ghost" size="sm">
+                        <Pencil className="h-4 w-4" />
+                    </Button>
+                )}
             </DialogTrigger>
             <DialogContent className="sm:max-w-[500px]">
                 <form onSubmit={handleSubmit}>
@@ -123,23 +131,87 @@ export function EditInstructorDialog({ instructor }: EditInstructorDialogProps) 
 
                         <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-2">
-                                <Label htmlFor="license_number">Número de Licencia</Label>
+                                <Label htmlFor="birth_date">Fecha de Nacimiento</Label>
                                 <Input
-                                    id="license_number"
-                                    name="license_number"
-                                    defaultValue={instructor.license_number || ''}
+                                    id="birth_date"
+                                    name="birth_date"
+                                    type="date"
+                                    defaultValue={instructor.birth_date || ''}
                                     disabled={loading}
                                 />
                             </div>
                             <div className="space-y-2">
-                                <Label htmlFor="license_expiry">Vencimiento</Label>
+                                <Label htmlFor="cuil">CUIL</Label>
                                 <Input
-                                    id="license_expiry"
-                                    name="license_expiry"
-                                    type="date"
-                                    defaultValue={instructor.license_expiry || ''}
+                                    id="cuil"
+                                    name="cuil"
+                                    placeholder="20-12345678-9"
+                                    defaultValue={instructor.cuil || ''}
                                     disabled={loading}
                                 />
+                            </div>
+                        </div>
+
+                        <div className="space-y-2">
+                            <Label htmlFor="address">Dirección</Label>
+                            <Input
+                                id="address"
+                                name="address"
+                                placeholder="Calle Falsa 123, Quilmes"
+                                defaultValue={instructor.address || ''}
+                                disabled={loading}
+                            />
+                        </div>
+
+                        <div className="space-y-2">
+                            <Label className="text-sm font-semibold text-primary">Contacto de Emergencia</Label>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <Label htmlFor="emergency_contact_name">Nombre</Label>
+                                    <Input
+                                        id="emergency_contact_name"
+                                        name="emergency_contact_name"
+                                        placeholder="Nombre del contacto"
+                                        defaultValue={instructor.emergency_contact_name || ''}
+                                        disabled={loading}
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="emergency_contact_phone">Teléfono</Label>
+                                    <Input
+                                        id="emergency_contact_phone"
+                                        name="emergency_contact_phone"
+                                        placeholder="Teléfono alternativo"
+                                        defaultValue={instructor.emergency_contact_phone || ''}
+                                        disabled={loading}
+                                    />
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="space-y-2">
+                            <Label className="text-sm font-semibold text-primary">Licencia de Conducir</Label>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <Label htmlFor="license_number">Número</Label>
+                                    <Input
+                                        id="license_number"
+                                        name="license_number"
+                                        placeholder="B-12345678"
+                                        defaultValue={instructor.license_number || ''}
+                                        disabled={loading}
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="license_expiry">Vencimiento</Label>
+                                    <Input
+                                        id="license_expiry"
+                                        name="license_expiry"
+                                        type="date"
+                                        defaultValue={instructor.license_expiry || ''}
+                                        disabled={loading}
+                                    />
+                                </div>
                             </div>
                         </div>
                     </div>

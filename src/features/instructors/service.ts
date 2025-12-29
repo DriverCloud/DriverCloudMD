@@ -4,11 +4,15 @@ export interface Instructor {
     id: string;
     first_name: string;
     last_name: string;
-    email: string;
-    phone: string;
+    email?: string;
+    phone?: string;
+    birth_date?: string;
+    cuil?: string;
+    address?: string;
+    emergency_contact_name?: string;
+    emergency_contact_phone?: string;
     license_number: string;
     license_expiry?: string;
-    // specialties: string[]; // Not in DB yet
     status: 'active' | 'inactive';
 }
 
@@ -32,10 +36,14 @@ export const instructorsService = {
             last_name: i.last_name,
             email: i.email,
             phone: i.phone,
+            birth_date: i.birth_date,
+            cuil: i.cuil,
+            address: i.address,
+            emergency_contact_name: i.emergency_contact_name,
+            emergency_contact_phone: i.emergency_contact_phone,
             license_number: i.license_number,
             license_expiry: i.license_expiry,
             status: i.status || 'active',
-            // specialties: [] 
         }));
     },
 
@@ -62,8 +70,13 @@ export const instructorsService = {
                 last_name: instructor.last_name,
                 email: instructor.email,
                 phone: instructor.phone,
+                birth_date: instructor.birth_date,
+                cuil: instructor.cuil,
+                address: instructor.address,
+                emergency_contact_name: instructor.emergency_contact_name,
+                emergency_contact_phone: instructor.emergency_contact_phone,
                 license_number: instructor.license_number,
-                // specialties: instructor.specialties, // Todo: Create table for this
+                license_expiry: instructor.license_expiry,
                 school_id: membership.school_id,
                 owner_id: membership.owner_id,
                 status: 'active'

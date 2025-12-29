@@ -16,8 +16,14 @@ import {
     TableRow,
 } from "@/components/ui/table"
 
-export default async function StudentsPage() {
+export default async function StudentsPage({
+    searchParams
+}: {
+    searchParams: Promise<{ search?: string }>;
+}) {
     const supabase = await createClient();
+    const params = await searchParams;
+    const searchQuery = params.search;
 
     // Get User Role
     const { data: { user } } = await supabase.auth.getUser();
@@ -29,11 +35,17 @@ export default async function StudentsPage() {
     const isInstructor = userRole === 'instructor';
 
     // Fetch students
-    const { data: students, error } = await supabase
+    let query = supabase
         .from('students')
         .select('*')
         .eq('status', 'active')
-        .is('deleted_at', null)
+        .is('deleted_at', null);
+
+    if (searchQuery) {
+        query = query.or(`first_name.ilike.%${searchQuery}%,last_name.ilike.%${searchQuery}%`);
+    }
+
+    const { data: students, error } = await query
         .order('created_at', { ascending: false });
 
     if (error) {
@@ -60,7 +72,23 @@ export default async function StudentsPage() {
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
                 <div>
                     <h1 className="text-3xl font-bold tracking-tight">Estudiantes</h1>
-                    <p className="text-muted-foreground mt-1">{totalStudents} estudiantes activos</p>
+                    <div className="flex items-center gap-2 mt-1">
+                        <p className="text-muted-foreground">{totalStudents} estudiantes activos</p>
+                        {searchQuery && (
+                            <>
+                                <span className="text-muted-foreground">|</span>
+                                <p className="text-primary font-medium tracking-tight">
+                                    Resultados para "{searchQuery}"
+                                </p>
+                                <Link
+                                    href="/dashboard/students"
+                                    className="text-xs text-muted-foreground hover:text-foreground underline ml-2"
+                                >
+                                    Limpiar búsqueda
+                                </Link>
+                            </>
+                        )}
+                    </div>
                 </div>
                 <div className="flex gap-3">
                     {!isInstructor && (

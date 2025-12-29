@@ -8,11 +8,13 @@ import { createClient } from '@/lib/supabase/server';
 export default async function ClassesPage({
     searchParams
 }: {
-    searchParams: Promise<{ date?: string; view?: string }>;
+    searchParams: Promise<{ date?: string; view?: string; instructorId?: string; vehicleId?: string }>;
 }) {
     const params = await searchParams;
     const dateParam = params.date;
     const viewParam = params.view;
+    const instructorId = params.instructorId;
+    const vehicleId = params.vehicleId;
 
     const date = dateParam ? new Date(dateParam) : new Date();
     const view = viewParam || 'week';
@@ -66,7 +68,7 @@ export default async function ClassesPage({
         appointments = res.data || [];
     } else {
         const [appRes, resRes] = await Promise.all([
-            getAppointments(startStr, endStr),
+            getAppointments(startStr, endStr, undefined, instructorId, vehicleId),
             getResources()
         ]);
         appointments = appRes.data || [];
@@ -75,14 +77,24 @@ export default async function ClassesPage({
 
     return (
         <div className="flex flex-col h-[calc(100vh-100px)] gap-4">
-            <div className="flex justify-between items-center">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <div>
                     <h1 className="text-3xl font-bold tracking-tight">Calendario de Clases</h1>
                     <p className="text-muted-foreground">
                         Gestiona los turnos y disponibilidad.
                     </p>
                 </div>
-                <div className="flex gap-2">
+                <div className="flex flex-wrap items-center gap-2">
+                    {!isStudent && !isInstructor && (
+                        <div className="flex items-center gap-2">
+                            <CalendarFilters
+                                instructors={resources.instructors}
+                                vehicles={resources.vehicles}
+                                currentInstructorId={instructorId}
+                                currentVehicleId={vehicleId}
+                            />
+                        </div>
+                    )}
                     {!isInstructor && <CreateClassDialog resources={resources} />}
                 </div>
             </div>
@@ -100,3 +112,6 @@ export default async function ClassesPage({
         </div>
     );
 }
+
+// Client component for filters to handle navigation
+import { CalendarFilters } from '@/components/classes/CalendarFilters';

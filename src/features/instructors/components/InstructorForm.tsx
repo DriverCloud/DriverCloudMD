@@ -20,12 +20,16 @@ import { Checkbox } from "@/components/ui/checkbox";
 const formSchema = z.object({
     first_name: z.string().min(2, "Nombre requerido"),
     last_name: z.string().min(2, "Apellido requerido"),
-    email: z.string().email("Email inválido"),
-    phone: z.string().min(8, "Teléfono mínimo 8 dígitos"),
+    email: z.string().email("Email inválido").optional().or(z.literal("")),
+    phone: z.string().min(8, "Teléfono mínimo 8 dígitos").optional().or(z.literal("")),
+    birth_date: z.string().optional(),
+    cuil: z.string().optional(),
+    address: z.string().optional(),
+    emergency_contact_name: z.string().optional(),
+    emergency_contact_phone: z.string().optional(),
     license_number: z.string().min(5, "Nro licencia requerido"),
-    specialties: z.array(z.string()).refine((value) => value.length > 0, {
-        message: "Selecciona al menos una especialidad",
-    }),
+    license_expiry: z.string().optional(),
+    specialties: z.array(z.string()).optional(),
 });
 
 const SPECIALTIES = [
@@ -43,7 +47,13 @@ export function InstructorForm({ onSuccess }: { onSuccess?: () => void }) {
             last_name: "",
             email: "",
             phone: "",
+            birth_date: "",
+            cuil: "",
+            address: "",
+            emergency_contact_name: "",
+            emergency_contact_phone: "",
             license_number: "",
+            license_expiry: "",
             specialties: [],
         },
     });
@@ -121,19 +131,112 @@ export function InstructorForm({ onSuccess }: { onSuccess?: () => void }) {
                     />
                 </div>
 
+                <div className="grid grid-cols-2 gap-4">
+                    <FormField
+                        control={form.control}
+                        name="birth_date"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Fecha de Nacimiento</FormLabel>
+                                <FormControl>
+                                    <Input type="date" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+                    <FormField
+                        control={form.control}
+                        name="cuil"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>CUIL</FormLabel>
+                                <FormControl>
+                                    <Input placeholder="20-12345678-9" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+                </div>
+
                 <FormField
                     control={form.control}
-                    name="license_number"
+                    name="address"
                     render={({ field }) => (
                         <FormItem>
-                            <FormLabel>Nro Licencia</FormLabel>
+                            <FormLabel>Dirección</FormLabel>
                             <FormControl>
-                                <Input placeholder="20-12345678-9" {...field} />
+                                <Input placeholder="Calle Falsa 123, Quilmes" {...field} />
                             </FormControl>
                             <FormMessage />
                         </FormItem>
                     )}
                 />
+
+                <div className="space-y-4 border-t pt-4 mt-4">
+                    <h3 className="text-sm font-semibold text-primary">Contacto de Emergencia</h3>
+                    <div className="grid grid-cols-2 gap-4">
+                        <FormField
+                            control={form.control}
+                            name="emergency_contact_name"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Nombre</FormLabel>
+                                    <FormControl>
+                                        <Input placeholder="Nombre del contacto" {...field} />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                        <FormField
+                            control={form.control}
+                            name="emergency_contact_phone"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Teléfono</FormLabel>
+                                    <FormControl>
+                                        <Input placeholder="Teléfono alternativo" {...field} />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                    </div>
+                </div>
+
+                <div className="space-y-4 border-t pt-4 mt-4">
+                    <h3 className="text-sm font-semibold text-primary">Licencia de Conducir</h3>
+                    <div className="grid grid-cols-2 gap-4">
+                        <FormField
+                            control={form.control}
+                            name="license_number"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Número</FormLabel>
+                                    <FormControl>
+                                        <Input placeholder="B-12345678" {...field} />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                        <FormField
+                            control={form.control}
+                            name="license_expiry"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Vencimiento</FormLabel>
+                                    <FormControl>
+                                        <Input type="date" {...field} />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                    </div>
+                </div>
 
                 <FormField
                     control={form.control}
@@ -157,12 +260,13 @@ export function InstructorForm({ onSuccess }: { onSuccess?: () => void }) {
                                                 >
                                                     <FormControl>
                                                         <Checkbox
-                                                            checked={field.value?.includes(item.id)}
+                                                            checked={field.value?.includes(item.id) ?? false}
                                                             onCheckedChange={(checked) => {
+                                                                const currentValues = field.value ?? [];
                                                                 return checked
-                                                                    ? field.onChange([...field.value, item.id])
+                                                                    ? field.onChange([...currentValues, item.id])
                                                                     : field.onChange(
-                                                                        field.value?.filter(
+                                                                        currentValues.filter(
                                                                             (value) => value !== item.id
                                                                         )
                                                                     )
