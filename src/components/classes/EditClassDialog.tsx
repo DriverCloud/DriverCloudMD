@@ -24,6 +24,8 @@ import { Loader2, Trash2, Calendar as CalendarIcon, Clock, User, Car, Edit } fro
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { updateAppointment, cancelAppointment } from '@/app/(auth)/dashboard/classes/actions';
+import { EvaluationForm } from '@/components/evaluations/EvaluationForm';
+import { EvaluationView } from '@/components/evaluations/EvaluationView';
 
 interface EditClassDialogProps {
     resources: {
@@ -35,6 +37,7 @@ interface EditClassDialogProps {
     appointment: any | null;
     open: boolean;
     onOpenChange: (open: boolean) => void;
+    userRole: string;
 }
 
 export function EditClassDialog({
@@ -42,11 +45,14 @@ export function EditClassDialog({
     appointment,
     open,
     onOpenChange,
+    userRole,
 }: EditClassDialogProps) {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [isEditing, setIsEditing] = useState(false);
     const router = useRouter();
+
+    const isInstructor = userRole === 'instructor';
 
     if (!appointment) return null;
 
@@ -140,8 +146,8 @@ export function EditClassDialog({
                                 {/* Edit Mode - Form Fields */}
                                 <div className="space-y-2">
                                     <Label htmlFor="student_id">Estudiante *</Label>
-                                    <Select name="student_id" defaultValue={appointment.student_id} required>
-                                        <SelectTrigger>
+                                    <Select name="student_id" defaultValue={appointment.student_id} required disabled={isInstructor}>
+                                        <SelectTrigger className={isInstructor ? "bg-muted text-muted-foreground" : ""}>
                                             <SelectValue placeholder="Seleccionar estudiante" />
                                         </SelectTrigger>
                                         <SelectContent>
@@ -152,6 +158,7 @@ export function EditClassDialog({
                                             ))}
                                         </SelectContent>
                                     </Select>
+                                    {isInstructor && <input type="hidden" name="student_id" value={appointment.student_id} />}
                                 </div>
 
                                 <div className="grid grid-cols-2 gap-4">
@@ -162,6 +169,8 @@ export function EditClassDialog({
                                             name="date"
                                             required
                                             defaultValue={appointment.scheduled_date}
+                                            readOnly={isInstructor}
+                                            className={isInstructor ? "bg-muted text-muted-foreground" : ""}
                                         />
                                     </div>
                                     <div className="space-y-2">
@@ -172,14 +181,16 @@ export function EditClassDialog({
                                             step="900"
                                             required
                                             defaultValue={appointment.start_time.slice(0, 5)}
+                                            readOnly={isInstructor}
+                                            className={isInstructor ? "bg-muted text-muted-foreground" : ""}
                                         />
                                     </div>
                                 </div>
 
                                 <div className="space-y-2">
                                     <Label htmlFor="class_type_id">Tipo de Clase *</Label>
-                                    <Select name="class_type_id" defaultValue={appointment.class_type_id} required>
-                                        <SelectTrigger>
+                                    <Select name="class_type_id" defaultValue={appointment.class_type_id} required disabled={isInstructor}>
+                                        <SelectTrigger className={isInstructor ? "bg-muted text-muted-foreground" : ""}>
                                             <SelectValue placeholder="Tipo" />
                                         </SelectTrigger>
                                         <SelectContent>
@@ -190,12 +201,13 @@ export function EditClassDialog({
                                             ))}
                                         </SelectContent>
                                     </Select>
+                                    {isInstructor && <input type="hidden" name="class_type_id" value={appointment.class_type_id} />}
                                 </div>
 
                                 <div className="space-y-2">
                                     <Label htmlFor="instructor_id">Instructor *</Label>
-                                    <Select name="instructor_id" defaultValue={appointment.instructor_id} required>
-                                        <SelectTrigger>
+                                    <Select name="instructor_id" defaultValue={appointment.instructor_id} required disabled={isInstructor}>
+                                        <SelectTrigger className={isInstructor ? "bg-muted text-muted-foreground" : ""}>
                                             <SelectValue placeholder="Seleccionar instructor" />
                                         </SelectTrigger>
                                         <SelectContent>
@@ -206,6 +218,7 @@ export function EditClassDialog({
                                             ))}
                                         </SelectContent>
                                     </Select>
+                                    {isInstructor && <input type="hidden" name="instructor_id" value={appointment.instructor_id} />}
                                 </div>
 
                                 <div className="space-y-2">
@@ -216,18 +229,18 @@ export function EditClassDialog({
                                         </SelectTrigger>
                                         <SelectContent>
                                             <SelectItem value="scheduled">Agendado</SelectItem>
-                                            <SelectItem value="rescheduled">Reprogramado</SelectItem>
+                                            <SelectItem value="rescheduled" disabled={isInstructor}>Reprogramado</SelectItem>
                                             <SelectItem value="completed">Completado</SelectItem>
-                                            <SelectItem value="cancelled">Cancelado</SelectItem>
+                                            <SelectItem value="cancelled" disabled={isInstructor}>Cancelado</SelectItem>
                                         </SelectContent>
                                     </Select>
                                 </div>
 
                                 <div className="space-y-2">
                                     <Label htmlFor="vehicle_id">Vehículo *</Label>
-                                    <Select name="vehicle_id" defaultValue={appointment.vehicle_id} required>
+                                    <Select name="vehicle_id" defaultValue={appointment.vehicle_id} required disabled={isInstructor}>
 
-                                        <SelectTrigger>
+                                        <SelectTrigger className={isInstructor ? "bg-muted text-muted-foreground" : ""}>
                                             <SelectValue placeholder="Seleccionar vehículo" />
                                         </SelectTrigger>
                                         <SelectContent>
@@ -238,6 +251,7 @@ export function EditClassDialog({
                                             ))}
                                         </SelectContent>
                                     </Select>
+                                    {isInstructor && <input type="hidden" name="vehicle_id" value={appointment.vehicle_id} />}
                                 </div>
                             </>
                         ) : (
@@ -324,6 +338,26 @@ export function EditClassDialog({
                                 </Button>
                             )}
                         </div>
+
+                        {/* Evaluation Section */}
+                        {!isEditing && appointment.status === 'completed' && (
+                            <div className="flex justify-end gap-2 mt-2 w-full border-t pt-4">
+                                {Array.isArray(appointment.evaluation) && appointment.evaluation.length > 0 ? (
+                                    <EvaluationView
+                                        evaluation={appointment.evaluation[0]}
+                                        studentName={`${appointment.student?.first_name} ${appointment.student?.last_name}`}
+                                        isInstructorOrAdmin={true} // Assuming EditClassDialog is used by instructors/admins
+                                    />
+                                ) : (
+                                    <EvaluationForm
+                                        appointmentId={appointment.id}
+                                        studentId={appointment.student_id}
+                                        instructorId={appointment.instructor_id}
+                                        studentName={`${appointment.student?.first_name} ${appointment.student?.last_name}`}
+                                    />
+                                )}
+                            </div>
+                        )}
                     </DialogFooter>
                 </form>
             </DialogContent>

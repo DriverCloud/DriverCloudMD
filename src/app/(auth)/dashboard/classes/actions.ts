@@ -27,7 +27,8 @@ export async function getAppointments(startDate: string, endDate: string, studen
             vehicle:vehicles(brand, model, license_plate),
             class_type:class_types(name, duration_minutes),
             package:student_packages(id, total_credits),
-            class_number
+            class_number,
+            evaluation:class_evaluations(*)
         `)
         .gte('scheduled_date', startDate)
         .lte('scheduled_date', endDate);
@@ -185,10 +186,19 @@ export async function createAppointment(formData: FormData) {
         return { success: false, error: 'El estudiante no tiene créditos disponibles o paquetes activos.' };
     }
 
-    // DECREMENT CREDITS FIRST
+    // DEDUCT CREDITS
+    // Calculate credit cost based on duration
+    // If duration >= 90 minutes, it costs 2 credits. Otherwise 1.
+    const creditCost = classType.duration_minutes >= 90 ? 2 : 1;
+
+    // Check if enough credits
+    if (activePackage.credits < creditCost) {
+        return { success: false, error: `El estudiante no tiene suficientes créditos. Se requieren ${creditCost} créditos.` };
+    }
+
     const { error: updateError } = await supabase
         .from('student_packages')
-        .update({ credits: activePackage.credits - 1 })
+        .update({ credits: activePackage.credits - creditCost })
         .eq('id', activePackage.id);
 
     if (updateError) {
@@ -198,8 +208,63 @@ export async function createAppointment(formData: FormData) {
 
 
     // Calculate class number: (Total - Remaining) + 1
-    // Example: Total 10, Remaining 10 -> Class 1
-    // Example: Total 10, Remaining 9 -> Class 2
+    // Example: Total 10, Remaining 10 -> Class 1 (Start)
+    // If creditCost is 2:
+    // Started with 10. Cost 2. Remaining becomes 8.
+    // Class number: 10 - 8 + 1 = 3 ?? No wait.
+
+    // If I have 10 credits.
+    // 1. Single Class (Cost 1). Remaining 9.
+    // Number = 10 - 9 = 1 ?? No.
+    // Usually: Total - Remaining (after deduction) ?? 
+
+    // Let's re-verify the formula.
+    // Previous code: `(activePackage.total_credits || activePackage.credits) - activePackage.credits + 1`
+    // Wait, activePackage.credits was utilizing the value *before* update.
+    // If I have 10.
+    // Old logic: 10 - 10 + 1 = 1.
+    // New logic: 
+    // If deduct 2. Remaining will be 8.
+    // I want this class to be "Class #number".
+
+    // If it's the first class ever.
+    // Total 10. Remaining (before update) 10.
+    // Formula: 10 - 10 + 1 = 1.
+    // So class_number is 1.
+    // If cost is 2. The next time:
+    // Total 10. Remaining (before update) 8.
+    // Formula: 10 - 8 + 1 = 3.
+
+    // This seems correct for the "start" number.
+    // First class (double): Class 1. (Takes 1 and 2).
+    // Second class (single): 
+    // Total 10. Remaining 8.
+    // Formula: 10 - 8 + 1 = 3.
+
+    // Wait, user said: "Por ejmplo a las 10 a.m jose demo tiene una clase doble pero deberia se clase 3 y 4 de 10. La clase siguiente que tiene a las 12 hs deberia seria ser la clase 5"
+    // So if previous classes consumed 2 credits (Class 1, Class 2).
+    // Current class is double.
+    // It starts at 3.
+    // It consumes 2 credits.
+    // Next class starts at 5.
+
+    // So the formula `Total - Remaining(current) + 1` works IF `Remaining` is the current available balance.
+    // Let's verify.
+    // Initial: 10.
+    // 1. Class Single. Cost 1.
+    //    Balance: 10. ClassNum: 10-10+1 = 1.
+    //    Update balance to 9.
+    // 2. Class Single. Cost 1.
+    //    Balance: 9. ClassNum: 10-9+1 = 2.
+    //    Update balance to 8.
+    // 3. Class Double. Cost 2.
+    //    Balance: 8. ClassNum: 10-8+1 = 3.
+    //    Update balance to 6.
+    // 4. Class Single. Cost 1.
+    //    Balance: 6. ClassNum: 10-6+1 = 5.
+
+    // This logic holds perfectly.
+
     const classNumber = (activePackage.total_credits || activePackage.credits) - activePackage.credits + 1;
 
     const { data, error } = await supabase.from('appointments').insert({
@@ -259,6 +324,37 @@ export async function updateAppointment(appointmentId: string, formData: FormDat
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return { success: false, error: 'No autenticado' };
 
+    // Get membership to check role
+    const { data: membership } = await supabase
+        .from('memberships')
+        .select('role')
+        .eq('user_id', user.id)
+        .single();
+
+    if (!membership) return { success: false, error: 'Sin membresía' };
+
+    // --- INSTRUCTOR LOGIC ---
+    if (membership.role === 'instructor') {
+        const status = formData.get('status') as string;
+
+        // Instructors can only update status
+        const { data, error } = await supabase
+            .from('appointments')
+            .update({ status })
+            .eq('id', appointmentId)
+            .select()
+            .single();
+
+        if (error) {
+            console.error('Error updating appointment (instructor):', error);
+            return { success: false, error: 'Error al actualizar el estado del turno' };
+        }
+
+        revalidatePath('/dashboard/classes');
+        return { success: true, data };
+    }
+
+    // --- ADMIN/SECRETARY LOGIC ---
     const studentId = formData.get('student_id') as string;
     const instructorId = formData.get('instructor_id') as string;
     const vehicleId = formData.get('vehicle_id') as string;

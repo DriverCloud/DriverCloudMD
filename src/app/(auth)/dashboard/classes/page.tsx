@@ -107,6 +107,7 @@ export default async function ClassesPage({
                     currentDate={date}
                     view={view}
                     resources={resources}
+                    userRole={isStudent ? 'student' : isInstructor ? 'instructor' : 'admin'} // Simplified default to admin/secretary
                 />
             )}
         </div>

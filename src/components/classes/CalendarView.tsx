@@ -28,6 +28,7 @@ interface CalendarViewProps {
         classTypes: any[];
     };
     filterVehicleId?: string;
+    userRole: string;
 }
 
 // Helper to generate consistent color for a vehicle
@@ -52,7 +53,7 @@ function getVehicleColor(vehicleId: string): { bg: string; border: string; text:
     return colors[index];
 }
 
-export function CalendarView({ appointments, currentDate, view, resources, filterVehicleId }: CalendarViewProps) {
+export function CalendarView({ appointments, currentDate, view, resources, filterVehicleId, userRole }: CalendarViewProps) {
     const router = useRouter();
     const [showAvailability, setShowAvailability] = useState(false);
     const [createOpen, setCreateOpen] = useState(false);
@@ -314,7 +315,9 @@ export function CalendarView({ appointments, currentDate, view, resources, filte
                                                     </div>
                                                     {app.class_number && app.package?.total_credits && (
                                                         <div className="text-[9px] opacity-90 font-medium">
-                                                            Clase {app.class_number} de {app.package.total_credits}
+                                                            {app.class_type?.duration_minutes >= 90
+                                                                ? `Clase ${app.class_number} y ${app.class_number + 1}`
+                                                                : `Clase ${app.class_number}`} de {app.package.total_credits}
                                                         </div>
                                                     )}
                                                     <div className="truncate opacity-75 text-[9px]">
@@ -344,6 +347,7 @@ export function CalendarView({ appointments, currentDate, view, resources, filte
                 appointment={selectedAppointment}
                 open={editOpen}
                 onOpenChange={setEditOpen}
+                userRole={userRole}
             />
         </div>
     );

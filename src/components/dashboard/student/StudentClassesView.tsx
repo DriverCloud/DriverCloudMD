@@ -18,6 +18,7 @@ import {
     AlertDialogTitle,
     AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { EvaluationView } from '@/components/evaluations/EvaluationView';
 
 interface StudentClassesViewProps {
     appointments: any[];
@@ -176,6 +177,16 @@ function ClassCard({ appointment, isUpcoming, router }: { appointment: any, isUp
                                 </AlertDialogFooter>
                             </AlertDialogContent>
                         </AlertDialog>
+                    </div>
+                )}
+
+                {!isUpcoming && appointment.status === 'completed' && appointment.evaluation && (
+                    <div className="flex gap-2 w-full md:w-auto mt-2 md:mt-0">
+                        <EvaluationView
+                            evaluation={Array.isArray(appointment.evaluation) ? appointment.evaluation[0] : appointment.evaluation}
+                            studentName={`${appointment.student?.first_name} ${appointment.student?.last_name}`}
+                            isInstructorOrAdmin={false}
+                        />
                     </div>
                 )}
             </CardContent>

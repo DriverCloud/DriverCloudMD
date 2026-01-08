@@ -148,3 +148,98 @@ export async function updateBookingPolicies(formData: FormData) {
     revalidatePath('/dashboard/settings');
     return { success: true };
 }
+
+export async function getClassTypes() {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return { success: false, error: 'No autenticado' };
+
+    const { data: membership } = await supabase
+        .from('memberships')
+        .select('school_id')
+        .eq('user_id', user.id)
+        .single();
+    if (!membership) return { success: false, error: 'Sin membresía' };
+
+    const { data, error } = await supabase
+        .from('class_types')
+        .select('*')
+        .eq('school_id', membership.school_id)
+        .is('deleted_at', null)
+        .order('created_at', { ascending: true });
+
+    if (error) {
+        console.error('Error fetching class types:', error);
+        return { success: false, error: 'Error al cargar tipos de clase' };
+    }
+
+    return { success: true, data };
+}
+
+export async function upsertClassType(formData: FormData) {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return { success: false, error: 'No autenticado' };
+
+    const { data: membership } = await supabase
+        .from('memberships')
+        .select('school_id, owner_id')
+        .eq('user_id', user.id)
+        .single();
+    if (!membership) return { success: false, error: 'Sin membresía' };
+
+    const id = formData.get('id') as string;
+    const name = formData.get('name') as string;
+    const duration_minutes = parseInt(formData.get('duration_minutes') as string);
+    const is_practical = formData.get('is_practical') === 'on';
+    const max_students = parseInt(formData.get('max_students') as string) || 1;
+
+    const classTypeData = {
+        name,
+        duration_minutes,
+        is_practical,
+        max_students,
+        school_id: membership.school_id,
+        owner_id: membership.owner_id,
+        updated_at: new Date().toISOString()
+    };
+
+    let result;
+    if (id && id !== 'undefined' && id !== '') {
+        result = await supabase
+            .from('class_types')
+            .update(classTypeData)
+            .eq('id', id);
+    } else {
+        result = await supabase
+            .from('class_types')
+            .insert({ ...classTypeData, created_at: new Date().toISOString() });
+    }
+
+    if (result.error) {
+        console.error('Error upserting class type:', result.error);
+        return { success: false, error: 'Error al guardar el tipo de clase' };
+    }
+
+    revalidatePath('/dashboard/settings');
+    return { success: true };
+}
+
+export async function deleteClassType(id: string) {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return { success: false, error: 'No autenticado' };
+
+    const { error } = await supabase
+        .from('class_types')
+        .update({ deleted_at: new Date().toISOString() })
+        .eq('id', id);
+
+    if (error) {
+        console.error('Error deleting class type:', error);
+        return { success: false, error: 'Error al eliminar el tipo de clase' };
+    }
+
+    revalidatePath('/dashboard/settings');
+    return { success: true };
+}
