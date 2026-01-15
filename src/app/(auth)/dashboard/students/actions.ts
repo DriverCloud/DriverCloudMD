@@ -45,7 +45,8 @@ export async function createStudent(formData: FormData): Promise<ActionState> {
         emergency_contact_name: formData.get("emergency_contact_name") as string,
         emergency_contact_phone: formData.get("emergency_contact_phone") as string,
         emergency_contact_relation: formData.get("emergency_contact_relation") as string,
-        status: 'active',
+        gender: formData.get("gender") as string,
+        status: (formData.get("status") as string) || 'active',
     };
 
     const { error } = await supabase.from("students").insert(data);
@@ -74,6 +75,8 @@ export async function updateStudent(id: string, formData: FormData): Promise<Act
         emergency_contact_name: formData.get("emergency_contact_name") as string,
         emergency_contact_phone: formData.get("emergency_contact_phone") as string,
         emergency_contact_relation: formData.get("emergency_contact_relation") as string,
+        gender: formData.get("gender") as string,
+        status: formData.get("status") as string,
     };
 
     const { error } = await supabase.from("students").update(data).eq("id", id);

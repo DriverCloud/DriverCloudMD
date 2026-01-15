@@ -89,15 +89,30 @@ export function CreateStudentDialog() {
                             </div>
                         </div>
 
-                        <div className="space-y-2">
-                            <Label htmlFor="email">Email</Label>
-                            <Input
-                                id="email"
-                                name="email"
-                                type="email"
-                                placeholder="juan.perez@example.com"
-                                disabled={loading}
-                            />
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <Label htmlFor="email">Email</Label>
+                                <Input
+                                    id="email"
+                                    name="email"
+                                    type="email"
+                                    placeholder="juan.perez@example.com"
+                                    disabled={loading}
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="gender">Género</Label>
+                                <select
+                                    id="gender"
+                                    name="gender"
+                                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                                    disabled={loading}
+                                >
+                                    <option value="other">Otro</option>
+                                    <option value="male">Hombre</option>
+                                    <option value="female">Mujer</option>
+                                </select>
+                            </div>
                         </div>
                         <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-2">
@@ -111,6 +126,26 @@ export function CreateStudentDialog() {
                                 />
                             </div>
                             <div className="space-y-2">
+                                <Label htmlFor="status">Estado</Label>
+                                <select
+                                    id="status"
+                                    name="status"
+                                    defaultValue="active"
+                                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                                    disabled={loading}
+                                >
+                                    <option value="active">Activo (En Curso)</option>
+                                    <option value="paused">En Pausa (Suspendido)</option>
+                                    <option value="finished">Finalizado (Sin Examen)</option>
+                                    <option value="graduated">Graduado (Licencia Obtenida)</option>
+                                    <option value="failed">Reprobado / Requiere Refuerzo</option>
+                                    <option value="abandoned">Abandono</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
                                 <Label htmlFor="phone">Teléfono</Label>
                                 <Input
                                     id="phone"
@@ -119,16 +154,15 @@ export function CreateStudentDialog() {
                                     disabled={loading}
                                 />
                             </div>
-                        </div>
-
-                        <div className="space-y-2">
-                            <Label htmlFor="address">Dirección</Label>
-                            <Input
-                                id="address"
-                                name="address"
-                                placeholder="Calle, Número, Localidad"
-                                disabled={loading}
-                            />
+                            <div className="space-y-2">
+                                <Label htmlFor="address">Dirección</Label>
+                                <Input
+                                    id="address"
+                                    name="address"
+                                    placeholder="Calle, Número, Localidad"
+                                    disabled={loading}
+                                />
+                            </div>
                         </div>
 
                         <div className="flex items-center space-x-2 py-2">

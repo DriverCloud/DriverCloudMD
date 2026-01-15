@@ -3,6 +3,8 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 
+import { EvaluationView } from '@/components/evaluations/EvaluationView';
+
 interface ClassHistoryProps {
     appointments: any[];
 }
@@ -23,7 +25,8 @@ export function ClassHistory({ appointments }: ClassHistoryProps) {
                                 <th className="p-3 text-left">Instructor</th>
                                 <th className="p-3 text-left">Vehículo</th>
                                 <th className="p-3 text-left">Tipo</th>
-                                <th className="p-3 text-right">Estado</th>
+                                <th className="p-3 text-center">Estado</th>
+                                <th className="p-3 text-right">Acciones</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -35,6 +38,9 @@ export function ClassHistory({ appointments }: ClassHistoryProps) {
 
                                 // Time is already in HH:MM:SS format, generally we want HH:MM
                                 const timeStr = apt.start_time.slice(0, 5);
+
+                                const evaluationData = Array.isArray(apt.evaluation) ? apt.evaluation[0] : apt.evaluation;
+                                const hasEvaluation = evaluationData && Object.keys(evaluationData).length > 0;
 
                                 return (
                                     <tr key={apt.id} className="border-b hover:bg-muted/50">
@@ -49,7 +55,7 @@ export function ClassHistory({ appointments }: ClassHistoryProps) {
                                         <td className="p-3">
                                             {apt.class_type?.name || 'Clase Práctica'}
                                         </td>
-                                        <td className="p-3 text-right">
+                                        <td className="p-3 text-center">
                                             <Badge variant="outline" className={
                                                 apt.status === 'completed' ? 'bg-green-50 text-green-700 border-green-200' :
                                                     apt.status === 'canceled' ? 'bg-red-50 text-red-700 border-red-200' :
@@ -60,12 +66,23 @@ export function ClassHistory({ appointments }: ClassHistoryProps) {
                                                         apt.status === 'canceled' ? 'Cancelada' : apt.status}
                                             </Badge>
                                         </td>
+                                        <td className="p-3 text-right">
+                                            {apt.status === 'completed' && hasEvaluation && (
+                                                <div className="flex justify-end">
+                                                    <EvaluationView
+                                                        evaluation={evaluationData}
+                                                        studentName="Alumno" // Context is mostly clear in student profile
+                                                        isInstructorOrAdmin={true}
+                                                    />
+                                                </div>
+                                            )}
+                                        </td>
                                     </tr>
                                 );
                             })}
                             {appointments.length === 0 && (
                                 <tr>
-                                    <td colSpan={6} className="p-8 text-center text-muted-foreground">
+                                    <td colSpan={7} className="p-8 text-center text-muted-foreground">
                                         No hay clases registradas
                                     </td>
                                 </tr>

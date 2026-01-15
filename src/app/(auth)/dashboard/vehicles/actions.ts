@@ -138,16 +138,31 @@ export async function deleteVehicle(vehicleId: string) {
 export async function addMaintenanceRecord(vehicleId: string, formData: FormData) {
     const supabase = await createClient();
 
+    // Get auth user
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return { success: false, error: 'No autenticado' };
+
+    // Get membership for ownership context
+    const { data: membership } = await supabase
+        .from('memberships')
+        .select('school_id, owner_id')
+        .eq('user_id', user.id)
+        .single();
+
+    if (!membership) return { success: false, error: 'Sin membresía' };
+
     const date = formData.get('date') as string;
     const type = formData.get('type') as string;
     const description = formData.get('description') as string;
     const mileage = formData.get('mileage') as string;
-    const cost = formData.get('cost') as string;
+    const costStr = formData.get('cost') as string;
     const provider = formData.get('provider') as string;
 
     if (!date || !type) {
         return { success: false, error: 'Fecha y tipo son requeridos' };
     }
+
+    const cost = costStr ? parseFloat(costStr) : null;
 
     const { error } = await supabase
         .from('vehicle_service_records')
@@ -157,13 +172,47 @@ export async function addMaintenanceRecord(vehicleId: string, formData: FormData
             type,
             description,
             mileage: mileage ? parseInt(mileage) : null,
-            cost: cost ? parseFloat(cost) : null,
+            cost: cost,
             provider
         });
 
     if (error) {
         console.error('Error adding maintenance:', error);
         return { success: false, error: 'Error al agregar mantenimiento' };
+    }
+
+    // --- INTEGRATION: CREATE EXPENSE IF COST > 0 ---
+    if (cost && cost > 0) {
+        // Fetch vehicle info for better description
+        const { data: vehicle } = await supabase
+            .from('vehicles')
+            .select('brand, model, license_plate')
+            .eq('id', vehicleId)
+            .single();
+
+        const expenseDescription = vehicle
+            ? `Mantenimiento: ${type} - ${vehicle.brand} ${vehicle.model} (${vehicle.license_plate})`
+            : `Mantenimiento: ${type}`; // Fallback if vehicle not found (unlikely)
+
+        const { error: expenseError } = await supabase
+            .from('expenses')
+            .insert({
+                school_id: membership.school_id,
+                owner_id: membership.owner_id,
+                date: date,
+                category: 'Mantenimiento',
+                description: expenseDescription,
+                amount: cost,
+                payment_method: 'Otros' // Default as not specified in form
+            });
+
+        if (expenseError) {
+            console.error('Error auto-creating expense from maintenance:', expenseError);
+            // We do NOT return false here, as the primary action (Maintenance) succeeded.
+            // Just log it.
+        } else {
+            revalidatePath('/dashboard/finance'); // Update finance page
+        }
     }
 
     revalidatePath(`/dashboard/vehicles/${vehicleId}`);

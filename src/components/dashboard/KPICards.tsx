@@ -6,13 +6,19 @@ import { Users, DollarSign, Calendar, Car } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { paymentsService } from "@/features/finance/services/payments.service";
 
-export function KPICards() {
+interface KPICardsProps {
+    userRole?: string | null;
+}
+
+export function KPICards({ userRole }: KPICardsProps) {
     const [stats, setStats] = useState({
         students: 0,
         vehicles: 0,
         availableVehicles: 0,
         income: 0,
     });
+
+    const isInstructor = userRole === 'instructor';
 
     useEffect(() => {
         const fetchStats = async () => {
@@ -31,8 +37,11 @@ export function KPICards() {
             const totalVehicles = vehicles?.length || 0;
             const available = vehicles?.filter(v => v.status === 'active').length || 0;
 
-            // Fetch Real Income
-            const income = await paymentsService.getIncomeStats();
+            // Fetch Real Income (Only if not instructor)
+            let income = 0;
+            if (!isInstructor) {
+                income = await paymentsService.getIncomeStats();
+            }
 
             setStats({
                 students: studentsCount || 0,
@@ -43,7 +52,42 @@ export function KPICards() {
         };
 
         fetchStats();
-    }, []);
+    }, [isInstructor]);
+
+    // Role-based visibility
+    if (isInstructor) {
+        return (
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                {/* Only show relevant or safe cards for instructor */}
+                <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <CardTitle className="text-sm font-medium">Clases Hoy</CardTitle>
+                        <Calendar className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-2xl font-bold">--</div>
+                        <p className="text-xs text-muted-foreground">
+                            Ver calendario para detalles
+                        </p>
+                    </CardContent>
+                </Card>
+                <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <CardTitle className="text-sm font-medium">
+                            Vehículos Disponibles
+                        </CardTitle>
+                        <Car className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-2xl font-bold">{stats.availableVehicles} / {stats.vehicles}</div>
+                        <p className="text-xs text-muted-foreground">
+                            {stats.vehicles - stats.availableVehicles} en mantenimiento/uso
+                        </p>
+                    </CardContent>
+                </Card>
+            </div>
+        );
+    }
 
     return (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">

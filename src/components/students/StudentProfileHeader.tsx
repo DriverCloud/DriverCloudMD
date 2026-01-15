@@ -13,10 +13,12 @@ import { EditStudentDialog } from './EditStudentDialog';
 interface StudentProfileHeaderProps {
     student: any;
     balance: any;
+    userRole?: string | null;
 }
 
-export function StudentProfileHeader({ student, balance }: StudentProfileHeaderProps) {
+export function StudentProfileHeader({ student, balance, userRole }: StudentProfileHeaderProps) {
     const router = useRouter();
+    const isInstructor = userRole === 'instructor';
 
     return (
         <div className="space-y-4">
@@ -57,10 +59,12 @@ export function StudentProfileHeader({ student, balance }: StudentProfileHeaderP
                             </div>
 
                             {/* Action Buttons */}
-                            <div className="flex gap-2">
-                                <EditStudentDialog student={student} />
-                                <SellPackageDialog studentId={student.id} studentName={`${student.first_name} ${student.last_name}`} />
-                            </div>
+                            {!isInstructor && (
+                                <div className="flex gap-2">
+                                    <EditStudentDialog student={student} />
+                                    <SellPackageDialog studentId={student.id} studentName={`${student.first_name} ${student.last_name}`} />
+                                </div>
+                            )}
                         </div>
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6 pt-6 border-t border-slate-200 dark:border-slate-700">

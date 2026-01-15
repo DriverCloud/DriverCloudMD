@@ -21,24 +21,46 @@ export async function createEvaluation(formData: FormData) {
         return { success: false, error: 'Calificación inválida' };
     }
 
-    // Authorization check: Ensure user is the instructor of the appointment
-    if (user.id !== instructorId) {
-        // Double check if user is admin/owner if necessary, strict match for now
+    // Resolve Instructor User ID from the provided InstructorTable ID
+    const { data: instructorData, error: instructorError } = await supabase
+        .from('instructors')
+        .select('user_id')
+        .eq('id', instructorId)
+        .single();
+
+    if (instructorError || !instructorData || !instructorData.user_id) {
+        return { success: false, error: 'No se encontró el usuario del instructor asociado.' };
+    }
+
+    const instructorUserId = instructorData.user_id;
+
+    // Authorization check: Ensure user is the instructor of the appointment OR has admin/owner privileges
+    const { data: membership } = await supabase
+        .from('memberships')
+        .select('role')
+        .eq('user_id', user.id)
+        .single();
+
+    const isAuthorized =
+        user.id === instructorUserId ||
+        (membership && ['admin', 'owner'].includes(membership.role));
+
+    if (!isAuthorized) {
         return { success: false, error: 'No tienes permiso para evaluar esta clase' };
     }
 
-    const { data, error } = await supabase.from('class_evaluations').insert({
+    const { data, error } = await supabase.from('class_evaluations').upsert({
         appointment_id: appointmentId,
-        instructor_id: instructorId,
+        instructor_id: instructorUserId, // Use the resolved User ID
         student_id: studentId,
         rating: rating,
         public_comment: publicComment,
         private_notes: privateNotes
-    }).select().single();
+    }, { onConflict: 'appointment_id' }).select().single();
 
     if (error) {
         console.error('Error creating evaluation:', error);
-        return { success: false, error: 'Error al guardar la evaluación' };
+        return { success: false, error: 'Error al guardar la evaluación: ' + error.message };
     }
 
     revalidatePath(`/dashboard/classes`);

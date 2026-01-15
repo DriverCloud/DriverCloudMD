@@ -5,6 +5,7 @@ import { CreateStudentDialog } from '@/components/students/CreateStudentDialog';
 import { EditStudentDialog } from '@/components/students/EditStudentDialog';
 import { DeleteStudentButton } from '@/components/students/DeleteStudentButton';
 import { SellPackageDialog } from '@/components/students/SellPackageDialog';
+import { ExportStudentsButton } from '@/components/students/ExportStudentsButton';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
 import {
@@ -19,11 +20,12 @@ import {
 export default async function StudentsPage({
     searchParams
 }: {
-    searchParams: Promise<{ search?: string }>;
+    searchParams: Promise<{ search?: string; status?: string }>;
 }) {
     const supabase = await createClient();
     const params = await searchParams;
     const searchQuery = params.search;
+    const statusFilter = params.status || 'active';
 
     // Get User Role
     const { data: { user } } = await supabase.auth.getUser();
@@ -38,8 +40,11 @@ export default async function StudentsPage({
     let query = supabase
         .from('students')
         .select('*')
-        .eq('status', 'active')
         .is('deleted_at', null);
+
+    if (statusFilter !== 'all') {
+        query = query.eq('status', statusFilter);
+    }
 
     if (searchQuery) {
         query = query.or(`first_name.ilike.%${searchQuery}%,last_name.ilike.%${searchQuery}%`);
@@ -66,6 +71,17 @@ export default async function StudentsPage({
 
     const totalStudents = students?.length || 0;
 
+    const statusMap: Record<string, string> = {
+        active: 'Activo',
+        paused: 'En Pausa',
+        finished: 'Finalizado',
+        graduated: 'Graduado',
+        failed: 'Reprobado',
+        abandoned: 'Abandono',
+        all: 'Todos',
+        inactive: 'Inactivo' // Legacy support
+    };
+
     return (
         <div className="flex flex-col gap-6 max-w-7xl mx-auto">
             {/* Page Header */}
@@ -73,18 +89,20 @@ export default async function StudentsPage({
                 <div>
                     <h1 className="text-3xl font-bold tracking-tight">Estudiantes</h1>
                     <div className="flex items-center gap-2 mt-1">
-                        <p className="text-muted-foreground">{totalStudents} estudiantes activos</p>
-                        {searchQuery && (
+                        <p className="text-muted-foreground">{totalStudents} estudiantes ({statusMap[statusFilter] || statusFilter})</p>
+                        {(searchQuery || statusFilter !== 'active') && (
                             <>
                                 <span className="text-muted-foreground">|</span>
-                                <p className="text-primary font-medium tracking-tight">
-                                    Resultados para "{searchQuery}"
-                                </p>
+                                {searchQuery && (
+                                    <p className="text-primary font-medium tracking-tight">
+                                        Resultados para "{searchQuery}"
+                                    </p>
+                                )}
                                 <Link
                                     href="/dashboard/students"
                                     className="text-xs text-muted-foreground hover:text-foreground underline ml-2"
                                 >
-                                    Limpiar búsqueda
+                                    Limpiar filtros
                                 </Link>
                             </>
                         )}
@@ -93,13 +111,35 @@ export default async function StudentsPage({
                 <div className="flex gap-3">
                     {!isInstructor && (
                         <>
-                            <Button variant="outline">
-                                Exportar Lista
-                            </Button>
+                            <ExportStudentsButton students={students || []} balanceMap={balanceMap} />
                             <CreateStudentDialog />
                         </>
                     )}
                 </div>
+            </div>
+
+            {/* Filters UI */}
+            <div className="flex flex-wrap items-center gap-2 border-b pb-4">
+                {[
+                    { id: 'active', label: 'Activos' },
+                    { id: 'paused', label: 'En Pausa' },
+                    { id: 'finished', label: 'Finalizados' },
+                    { id: 'graduated', label: 'Graduados' },
+                    { id: 'failed', label: 'Reprobados' },
+                    { id: 'abandoned', label: 'Abandono' },
+                    { id: 'all', label: 'Todos' }
+                ].map((f) => (
+                    <Link
+                        key={f.id}
+                        href={{ pathname: '/dashboard/students', query: { ...params, status: f.id } }}
+                        className={cn(
+                            "px-4 py-2 text-sm font-medium rounded-md transition-colors",
+                            statusFilter === f.id ? "bg-primary text-primary-foreground shadow-sm" : "hover:bg-muted text-muted-foreground"
+                        )}
+                    >
+                        {f.label}
+                    </Link>
+                ))}
             </div>
 
             {/* Students Table */}
@@ -123,12 +163,19 @@ export default async function StudentsPage({
                                 const formattedDate = `${registrationDate.getDate()}/${registrationDate.getMonth() + 1}/${registrationDate.getFullYear()}`;
                                 const balance = balanceMap.get(student.id) || 0;
 
+                                // Gender colors
+                                const genderColorClass = student.gender === 'male'
+                                    ? "bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400"
+                                    : student.gender === 'female'
+                                        ? "bg-pink-100 text-pink-600 dark:bg-pink-900/30 dark:text-pink-400"
+                                        : "bg-primary/10 text-primary";
+
                                 return (
                                     <TableRow key={student.id}>
                                         <TableCell className="font-medium">
                                             <div className="flex items-center gap-3">
-                                                <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-                                                    <Users className="h-5 w-5 text-primary" />
+                                                <div className={cn("h-10 w-10 rounded-full flex items-center justify-center shrink-0", genderColorClass)}>
+                                                    <Users className="h-5 w-5" />
                                                 </div>
                                                 <div>
                                                     <Link href={`/dashboard/students/${student.id}`} className="font-semibold hover:underline decoration-primary block">
@@ -155,11 +202,14 @@ export default async function StudentsPage({
                                         <TableCell>
                                             <span className={cn(
                                                 "inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium",
-                                                student.status === 'active'
-                                                    ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300"
-                                                    : "bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-slate-300"
+                                                student.status === 'active' ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300" :
+                                                    student.status === 'paused' ? "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300" :
+                                                        student.status === 'finished' ? "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300" :
+                                                            student.status === 'graduated' ? "bg-indigo-100 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-300" :
+                                                                student.status === 'failed' ? "bg-rose-100 text-rose-800 dark:bg-rose-900/30 dark:text-rose-300" :
+                                                                    "bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-slate-300"
                                             )}>
-                                                {student.status === 'active' ? 'Activo' : student.status}
+                                                {statusMap[student.status] || student.status}
                                             </span>
                                         </TableCell>
                                         <TableCell>

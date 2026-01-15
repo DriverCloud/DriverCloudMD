@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation';
 import { StudentProfileHeader } from '@/components/students/StudentProfileHeader';
 import { ClassHistory } from '@/components/students/ClassHistory';
 import { FinancialHistory } from '@/components/students/FinancialHistory';
+import { getUserRole } from '@/app/actions/auth';
 
 export default async function StudentDetailPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = await params;
@@ -36,7 +37,8 @@ export default async function StudentDetailPage({ params }: { params: Promise<{ 
             *,
             instructor:instructors(first_name, last_name),
             vehicle:vehicles(brand, model, license_plate),
-            class_type:class_types(name)
+            class_type:class_types(name),
+            evaluation:class_evaluations(*)
         `)
         .eq('student_id', id)
         .order('scheduled_date', { ascending: false })
@@ -56,14 +58,17 @@ export default async function StudentDetailPage({ params }: { params: Promise<{ 
         .eq('student_id', id)
         .order('payment_date', { ascending: false });
 
+    // 6. Fetch User Role
+    const userRole = await getUserRole();
+
     return (
         <div className="flex flex-col gap-6 max-w-7xl mx-auto">
             {/* Profile Header */}
-            <StudentProfileHeader student={student} balance={balance} />
+            <StudentProfileHeader student={student} balance={balance} userRole={userRole} />
 
-            <div className="grid gap-6 md:grid-cols-2">
+            <div className="grid gap-6 lg:grid-cols-3">
                 {/* Left Column: Classes */}
-                <div className="space-y-6">
+                <div className="space-y-6 lg:col-span-2">
                     <ClassHistory appointments={appointments || []} />
                 </div>
 

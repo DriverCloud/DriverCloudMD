@@ -49,7 +49,7 @@ export function EvaluationForm({ appointmentId, studentId, instructorId, student
     return (
         <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
-                <Button variant="outline" size="sm">Evaluar</Button>
+                <Button variant="outline" size="sm" type="button">Evaluar</Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-[425px]">
                 <DialogHeader>
