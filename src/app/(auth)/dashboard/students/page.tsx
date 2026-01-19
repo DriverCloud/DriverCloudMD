@@ -1,11 +1,12 @@
 import { createClient } from '@/lib/supabase/server';
-import { Users, Mail, Phone, Calendar } from 'lucide-react';
+import { Users, Mail, Phone, Calendar, User, PauseCircle, CheckCircle, Award, XCircle, LogOut, LayoutGrid } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { CreateStudentDialog } from '@/components/students/CreateStudentDialog';
 import { EditStudentDialog } from '@/components/students/EditStudentDialog';
 import { DeleteStudentButton } from '@/components/students/DeleteStudentButton';
 import { SellPackageDialog } from '@/components/students/SellPackageDialog';
 import { ExportStudentsButton } from '@/components/students/ExportStudentsButton';
+import { StudentSearch } from '@/components/students/StudentSearch';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
 import {
@@ -53,6 +54,28 @@ export default async function StudentsPage({
     const { data: students, error } = await query
         .order('created_at', { ascending: false });
 
+    // Fetch all status counts
+    const { data: statusCountsData } = await supabase
+        .from('students')
+        .select('status')
+        .is('deleted_at', null);
+
+    const counts: Record<string, number> = {
+        active: 0,
+        paused: 0,
+        finished: 0,
+        graduated: 0,
+        failed: 0,
+        abandoned: 0,
+        all: statusCountsData?.length || 0
+    };
+
+    statusCountsData?.forEach(s => {
+        if (s.status in counts) {
+            counts[s.status]++;
+        }
+    });
+
     if (error) {
         console.error('Error fetching students:', error);
     }
@@ -81,6 +104,16 @@ export default async function StudentsPage({
         all: 'Todos',
         inactive: 'Inactivo' // Legacy support
     };
+
+    const filters = [
+        { id: 'active', label: 'Activos', icon: User, color: 'text-emerald-500', bg: 'bg-emerald-500' },
+        { id: 'paused', label: 'En Pausa', icon: PauseCircle, color: 'text-amber-500', bg: 'bg-amber-500' },
+        { id: 'finished', label: 'Finalizados', icon: CheckCircle, color: 'text-blue-500', bg: 'bg-blue-500' },
+        { id: 'graduated', label: 'Graduados', icon: Award, color: 'text-indigo-500', bg: 'bg-indigo-500' },
+        { id: 'failed', label: 'Reprobados', icon: XCircle, color: 'text-rose-500', bg: 'bg-rose-500' },
+        { id: 'abandoned', label: 'Abandono', icon: LogOut, color: 'text-slate-500', bg: 'bg-slate-500' },
+        { id: 'all', label: 'Todos', icon: LayoutGrid, color: 'text-primary', bg: 'bg-primary' }
+    ];
 
     return (
         <div className="flex flex-col gap-6 max-w-7xl mx-auto">
@@ -118,28 +151,41 @@ export default async function StudentsPage({
                 </div>
             </div>
 
-            {/* Filters UI */}
-            <div className="flex flex-wrap items-center gap-2 border-b pb-4">
-                {[
-                    { id: 'active', label: 'Activos' },
-                    { id: 'paused', label: 'En Pausa' },
-                    { id: 'finished', label: 'Finalizados' },
-                    { id: 'graduated', label: 'Graduados' },
-                    { id: 'failed', label: 'Reprobados' },
-                    { id: 'abandoned', label: 'Abandono' },
-                    { id: 'all', label: 'Todos' }
-                ].map((f) => (
-                    <Link
-                        key={f.id}
-                        href={{ pathname: '/dashboard/students', query: { ...params, status: f.id } }}
-                        className={cn(
-                            "px-4 py-2 text-sm font-medium rounded-md transition-colors",
-                            statusFilter === f.id ? "bg-primary text-primary-foreground shadow-sm" : "hover:bg-muted text-muted-foreground"
-                        )}
-                    >
-                        {f.label}
-                    </Link>
-                ))}
+            {/* Filters and Search Toolbar */}
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+                <div className="flex flex-wrap items-center gap-2 bg-card border rounded-xl p-1.5 shadow-sm overflow-x-auto">
+                    {filters.map((f) => {
+                        const Icon = f.icon;
+                        const isActive = statusFilter === f.id;
+                        const count = counts[f.id] || 0;
+
+                        return (
+                            <Link
+                                key={f.id}
+                                href={{ pathname: '/dashboard/students', query: { ...params, status: f.id } }}
+                                className={cn(
+                                    "flex items-center gap-2 px-3 py-1.5 text-xs md:text-sm font-medium rounded-lg transition-all whitespace-nowrap",
+                                    isActive
+                                        ? "bg-primary text-primary-foreground shadow-sm"
+                                        : "hover:bg-muted text-muted-foreground"
+                                )}
+                            >
+                                <Icon className={cn("h-4 w-4", !isActive && f.color)} />
+                                <span>{f.label}</span>
+                                <span className={cn(
+                                    "flex items-center justify-center min-w-[18px] h-4.5 px-1 rounded-full text-[9px] font-bold",
+                                    isActive
+                                        ? "bg-white/20 text-white"
+                                        : "bg-muted-foreground/10 text-muted-foreground"
+                                )}>
+                                    {count}
+                                </span>
+                            </Link>
+                        );
+                    })}
+                </div>
+
+                <StudentSearch />
             </div>
 
             {/* Students Table */}
