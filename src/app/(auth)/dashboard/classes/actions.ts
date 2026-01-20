@@ -319,6 +319,7 @@ export async function getResources() {
 }
 
 export async function updateAppointment(appointmentId: string, formData: FormData) {
+    console.log('updateAppointment server action started for ID:', appointmentId);
     const supabase = await createClient();
 
     const { data: { user } } = await supabase.auth.getUser();
@@ -362,6 +363,8 @@ export async function updateAppointment(appointmentId: string, formData: FormDat
     const date = formData.get('date') as string;
     const startTime = formData.get('start_time') as string;
 
+    console.log('Update Data:', { studentId, instructorId, vehicleId, classTypeId, date, startTime });
+
     // Fetch class type duration
     const { data: classType } = await supabase
         .from('class_types')
@@ -369,13 +372,18 @@ export async function updateAppointment(appointmentId: string, formData: FormDat
         .eq('id', classTypeId)
         .single();
 
-    if (!classType) return { success: false, error: 'Tipo de clase inválido' };
+    if (!classType) {
+        console.log('Invalid class type ID:', classTypeId);
+        return { success: false, error: 'Tipo de clase inválido' };
+    }
 
     // Calculate end time
     const [hours, minutes] = startTime.split(':').map(Number);
     const dateObj = new Date();
     dateObj.setHours(hours, minutes + classType.duration_minutes);
     const endTime = `${dateObj.getHours().toString().padStart(2, '0')}:${dateObj.getMinutes().toString().padStart(2, '0')}`;
+
+    console.log('Calculated end time:', endTime);
 
     // VALIDATE AVAILABILITY - Check for conflicts (excluding current appointment)
     const conflictCheck = await checkConflicts(
@@ -390,6 +398,7 @@ export async function updateAppointment(appointmentId: string, formData: FormDat
     );
 
     if (conflictCheck.hasConflict) {
+        console.log('Conflict found:', conflictCheck.error);
         return { success: false, error: conflictCheck.error };
     }
 
@@ -414,6 +423,7 @@ export async function updateAppointment(appointmentId: string, formData: FormDat
         return { success: false, error: 'Error al actualizar el turno' };
     }
 
+    console.log('updateAppointment success:', data);
     revalidatePath('/dashboard/classes');
     return { success: true, data };
 }
