@@ -119,6 +119,48 @@ async function checkConflicts(
     return { hasConflict: false };
 }
 
+async function refundCredits(supabase: any, appointmentId: string) {
+    // Fetch appointment details needed for refund
+    const { data: appointment, error } = await supabase
+        .from('appointments')
+        .select(`
+            package_id,
+            class_type:class_types(duration_minutes)
+        `)
+        .eq('id', appointmentId)
+        .single();
+
+    if (error || !appointment || !appointment.package_id || !appointment.class_type) {
+        console.error('Error fetching appointment for refund:', error);
+        return; // Cannot refund if package or class type is missing
+    }
+
+    // Calculate credit to refund
+    const creditAmount = appointment.class_type.duration_minutes >= 90 ? 2 : 1;
+
+    // Get current package credits
+    const { data: pkg, error: pkgError } = await supabase
+        .from('student_packages')
+        .select('credits')
+        .eq('id', appointment.package_id)
+        .single();
+
+    if (pkgError || !pkg) {
+        console.error('Error fetching package for refund:', pkgError);
+        return;
+    }
+
+    // Refund credits
+    const { error: updateError } = await supabase
+        .from('student_packages')
+        .update({ credits: pkg.credits + creditAmount })
+        .eq('id', appointment.package_id);
+
+    if (updateError) {
+        console.error('Error refunding credits:', updateError);
+    }
+}
+
 
 export async function createAppointment(formData: FormData) {
     const supabase = await createClient();
@@ -319,7 +361,6 @@ export async function getResources() {
 }
 
 export async function updateAppointment(appointmentId: string, formData: FormData) {
-    console.log('updateAppointment server action started for ID:', appointmentId);
     const supabase = await createClient();
 
     const { data: { user } } = await supabase.auth.getUser();
@@ -363,8 +404,6 @@ export async function updateAppointment(appointmentId: string, formData: FormDat
     const date = formData.get('date') as string;
     const startTime = formData.get('start_time') as string;
 
-    console.log('Update Data:', { studentId, instructorId, vehicleId, classTypeId, date, startTime });
-
     // Fetch class type duration
     const { data: classType } = await supabase
         .from('class_types')
@@ -372,18 +411,13 @@ export async function updateAppointment(appointmentId: string, formData: FormDat
         .eq('id', classTypeId)
         .single();
 
-    if (!classType) {
-        console.log('Invalid class type ID:', classTypeId);
-        return { success: false, error: 'Tipo de clase inválido' };
-    }
+    if (!classType) return { success: false, error: 'Tipo de clase inválido' };
 
     // Calculate end time
     const [hours, minutes] = startTime.split(':').map(Number);
     const dateObj = new Date();
     dateObj.setHours(hours, minutes + classType.duration_minutes);
     const endTime = `${dateObj.getHours().toString().padStart(2, '0')}:${dateObj.getMinutes().toString().padStart(2, '0')}`;
-
-    console.log('Calculated end time:', endTime);
 
     // VALIDATE AVAILABILITY - Check for conflicts (excluding current appointment)
     const conflictCheck = await checkConflicts(
@@ -398,8 +432,21 @@ export async function updateAppointment(appointmentId: string, formData: FormDat
     );
 
     if (conflictCheck.hasConflict) {
-        console.log('Conflict found:', conflictCheck.error);
         return { success: false, error: conflictCheck.error };
+    }
+
+    // Check for status change to refund credits
+    // This must be done BEFORE the update to get the correct current status
+    const { data: currentAppointment } = await supabase
+        .from('appointments')
+        .select('status')
+        .eq('id', appointmentId)
+        .single();
+
+    const newStatus = formData.get('status') as string;
+
+    if (currentAppointment && currentAppointment.status === 'scheduled' && (newStatus === 'rescheduled' || newStatus === 'cancelled')) {
+        await refundCredits(supabase, appointmentId);
     }
 
     const { data, error } = await supabase
@@ -412,7 +459,7 @@ export async function updateAppointment(appointmentId: string, formData: FormDat
             scheduled_date: date,
             start_time: startTime,
             end_time: endTime,
-            status: formData.get('status') as string,
+            status: newStatus,
         })
         .eq('id', appointmentId)
         .select()
@@ -423,7 +470,6 @@ export async function updateAppointment(appointmentId: string, formData: FormDat
         return { success: false, error: 'Error al actualizar el turno' };
     }
 
-    console.log('updateAppointment success:', data);
     revalidatePath('/dashboard/classes');
     return { success: true, data };
 }
@@ -451,6 +497,11 @@ export async function cancelAppointment(appointmentId: string) {
         }
     }
     // Instructors/Admins can cancel mostly any (logic simplified for now)
+
+    // REFUND LOGIC: If appointment was scheduled, refund credits
+    if (appointment.status === 'scheduled') {
+        await refundCredits(supabase, appointmentId);
+    }
 
     const { data, error } = await supabase
         .from('appointments')

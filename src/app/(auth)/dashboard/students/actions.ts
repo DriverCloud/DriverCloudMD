@@ -93,6 +93,18 @@ export async function createPackage(formData: FormData): Promise<ActionState> {
     const supabase = await createClient();
     const student_id = formData.get("student_id") as string;
 
+    // VALIDATION: Check if student has active package with credits
+    const { count } = await supabase
+        .from('student_packages')
+        .select('*', { count: 'exact', head: true })
+        .eq('student_id', student_id)
+        .eq('status', 'active')
+        .gt('credits', 0);
+
+    if (count && count > 0) {
+        return { success: false, error: 'El estudiante ya tiene un paquete con créditos disponibles. Agote los créditos actuales antes de asignar uno nuevo.' };
+    }
+
     // Assuming a 'packages' or 'student_packages' table. 
     // Using a generic insert structure based on dialog fields.
     const data = {

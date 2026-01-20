@@ -79,15 +79,20 @@ export function EditClassDialog({
         setLoading(true);
         setError(null);
 
-        const formData = new FormData(e.currentTarget);
-        const result = await updateAppointment(appointment.id, formData);
+        try {
+            const formData = new FormData(e.currentTarget);
+            const result = await updateAppointment(appointment.id, formData);
 
-        if (result.success) {
-            setIsEditing(false);
-            onOpenChange(false);
-            router.refresh();
-        } else {
-            setError(result.error || 'Error al actualizar');
+            if (result.success) {
+                setIsEditing(false);
+                onOpenChange(false);
+                router.refresh();
+            } else {
+                setError(result.error || 'Error al actualizar');
+            }
+        } catch (err) {
+            console.error('Error updating appointment:', err);
+            setError('Error crítico al actualizar');
         }
 
         setLoading(false);
@@ -322,20 +327,29 @@ export function EditClassDialog({
                             {isEditing ? 'Cancelar' : 'Cerrar'}
                         </Button>
                         {appointment.status === 'scheduled' && (
-                            <Button
-                                type={isEditing ? "submit" : "button"}
-                                form="edit-class-form"
-                                disabled={loading}
-                                onClick={() => !isEditing && setIsEditing(true)}
-                            >
-                                {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                {isEditing ? 'Guardar' : (
-                                    <>
+                            <>
+                                {!isEditing ? (
+                                    <Button
+                                        type="button"
+                                        onClick={(e) => {
+                                            e.preventDefault();
+                                            setIsEditing(true);
+                                        }}
+                                    >
                                         <Edit className="mr-2 h-4 w-4" />
                                         Editar
-                                    </>
+                                    </Button>
+                                ) : (
+                                    <Button
+                                        type="submit"
+                                        form="edit-class-form"
+                                        disabled={loading}
+                                    >
+                                        {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                        Guardar
+                                    </Button>
                                 )}
-                            </Button>
+                            </>
                         )}
                     </div>
 
