@@ -36,6 +36,9 @@ export async function createInstructor(formData: FormData) {
     const emergencyContactPhone = formData.get('emergency_contact_phone') as string;
     const licenseNumber = formData.get('license_number') as string;
     const licenseExpiry = formData.get('license_expiry') as string;
+    const salaryType = formData.get('salary_type') as string;
+    const baseSalary = parseFloat(formData.get('base_salary') as string) || 0;
+    const pricePerClass = parseFloat(formData.get('price_per_class') as string) || 0;
 
     // Validate required fields
     if (!firstName || !lastName) {
@@ -60,6 +63,9 @@ export async function createInstructor(formData: FormData) {
             emergency_contact_phone: emergencyContactPhone || null,
             license_number: licenseNumber || null,
             license_expiry: licenseExpiry || null,
+            salary_type: salaryType || 'per_class',
+            base_salary: baseSalary,
+            price_per_class: pricePerClass,
             status: 'active'
         })
         .select()
@@ -98,6 +104,12 @@ export async function updateInstructor(instructorId: string, formData: FormData)
     const emergencyContactPhone = formData.get('emergency_contact_phone') as string;
     const licenseNumber = formData.get('license_number') as string;
     const licenseExpiry = formData.get('license_expiry') as string;
+    const salaryType = formData.get('salary_type') as string;
+    const baseSalary = parseFloat(formData.get('base_salary') as string) || 0;
+    const pricePerClass = parseFloat(formData.get('price_per_class') as string) || 0;
+
+    // Handle Rates
+    const ratesJson = formData.get('rates') as string;
 
     // Validate required fields
     if (!firstName || !lastName) {
@@ -119,6 +131,9 @@ export async function updateInstructor(instructorId: string, formData: FormData)
             emergency_contact_phone: emergencyContactPhone || null,
             license_number: licenseNumber || null,
             license_expiry: licenseExpiry || null,
+            salary_type: salaryType || 'per_class',
+            base_salary: baseSalary,
+            price_per_class: pricePerClass,
         })
         .eq('id', instructorId)
         .select()
@@ -127,6 +142,39 @@ export async function updateInstructor(instructorId: string, formData: FormData)
     if (error) {
         console.error('Error updating instructor:', error);
         return { success: false, error: 'Error al actualizar el instructor' };
+    }
+
+    // Update Rates if provided
+    if (ratesJson) {
+        try {
+            const rates = JSON.parse(ratesJson);
+
+            // Delete existing rates for this instructor to avoid stale data (simple strategy)
+            // Or upsert. Upsert is better but ensuring we delete removed ones is tricky with upsert only.
+            // Let's go with: Delete all and re-insert (replace). 
+            // Since we're sending the FULL state of rates from the frontend.
+
+            await supabase.from('instructor_rates').delete().eq('instructor_id', instructorId);
+
+            if (rates.length > 0) {
+                const ratesToInsert = rates.map((r: any) => ({
+                    instructor_id: instructorId,
+                    class_type_id: r.class_type_id,
+                    amount: r.amount
+                }));
+
+                const { error: ratesError } = await supabase
+                    .from('instructor_rates')
+                    .insert(ratesToInsert);
+
+                if (ratesError) {
+                    console.error('Error updating rates:', ratesError);
+                    // Not returning failure since main update succeeded, but logging it.
+                }
+            }
+        } catch (e) {
+            console.error('Error processing rates:', e);
+        }
     }
 
     revalidatePath('/dashboard/instructors');
@@ -151,4 +199,19 @@ export async function deleteInstructor(instructorId: string) {
     revalidatePath('/dashboard/instructors');
 
     return { success: true };
+}
+
+export async function getClassTypes() {
+    const supabase = await createClient();
+    const { data } = await supabase.from('class_types').select('*').order('name');
+    return data || [];
+}
+
+export async function getInstructorRates(instructorId: string) {
+    const supabase = await createClient();
+    const { data } = await supabase
+        .from('instructor_rates')
+        .select('*')
+        .eq('instructor_id', instructorId);
+    return data || [];
 }

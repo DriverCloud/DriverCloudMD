@@ -27,7 +27,7 @@ import { createClient } from "@/lib/supabase/client";
 
 const formSchema = z.object({
     student_id: z.string().min(1, "Selecciona un estudiante"),
-    amount: z.coerce.number().min(1, "El monto debe ser mayor a 0"),
+    amount: z.number().min(1, "El monto debe ser mayor a 0"),
     payment_method: z.string().min(1, "Selecciona método de pago"),
     notes: z.string().optional(),
 });

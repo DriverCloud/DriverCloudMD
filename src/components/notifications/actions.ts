@@ -31,7 +31,7 @@ export async function getNotifications() {
         .limit(5)
 
     if (upcomingClasses) {
-        upcomingClasses.forEach(appointment => {
+        (upcomingClasses as any[]).forEach(appointment => {
             notifications.push({
                 id: `class-${appointment.id}`,
                 type: 'class',

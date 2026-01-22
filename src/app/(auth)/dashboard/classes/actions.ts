@@ -519,3 +519,44 @@ export async function cancelAppointment(appointmentId: string) {
     return { success: true, data };
 }
 
+
+export async function updateAppointmentStatus(appointmentId: string, status: string) {
+    const supabase = await createClient();
+
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return { success: false, error: 'No autenticado' };
+
+    // Get membership
+    const { data: membership } = await supabase.from('memberships').select('role').eq('user_id', user.id).single();
+    if (!membership) return { success: false, error: 'Sin membresía' };
+
+    // Get current appointment to check for refund necessity
+    const { data: currentAppointment } = await supabase
+        .from('appointments')
+        .select('status, student_id') // student_id needed for ownership check if we wanted to be strict, but mainly status
+        .eq('id', appointmentId)
+        .single();
+
+    if (!currentAppointment) return { success: false, error: 'Turno no encontrado' };
+
+    // REFUND LOGIC: If appointment was scheduled and is being cancelled/rescheduled
+    // Note: This logic duplicates some of updateAppointment/cancelAppointment but is specific to just status change here.
+    if (currentAppointment.status === 'scheduled' && (status === 'rescheduled' || status === 'cancelled')) {
+        await refundCredits(supabase, appointmentId);
+    }
+
+    const { data, error } = await supabase
+        .from('appointments')
+        .update({ status })
+        .eq('id', appointmentId)
+        .select()
+        .single();
+
+    if (error) {
+        console.error('Error updating appointment status:', error);
+        return { success: false, error: 'Error al actualizar el estado' };
+    }
+
+    revalidatePath('/dashboard/classes');
+    return { success: true, data };
+}

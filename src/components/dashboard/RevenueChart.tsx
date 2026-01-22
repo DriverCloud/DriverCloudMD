@@ -40,7 +40,7 @@ export function RevenueChart() {
                             tickFormatter={(value) => `$${value}`}
                         />
                         <Tooltip
-                            formatter={(value: number) => [`$${value.toLocaleString()}`, "Ingresos"]}
+                            formatter={(value: any) => [`$${Number(value || 0).toLocaleString()}`, "Ingresos"]}
                             contentStyle={{ backgroundColor: 'white', borderRadius: '8px', border: '1px solid #e5e7eb' }}
                         />
                         <Bar

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
@@ -13,9 +13,11 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { updateInstructor } from '@/app/(auth)/dashboard/instructors/actions';
+import { updateInstructor, getClassTypes, getInstructorRates } from '@/app/(auth)/dashboard/instructors/actions';
 import { useRouter } from 'next/navigation';
-import { Loader2, Pencil } from 'lucide-react';
+import { Loader2, Pencil, Plus, Trash2 } from 'lucide-react';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
 
 interface EditInstructorDialogProps {
     instructor: {
@@ -31,6 +33,9 @@ interface EditInstructorDialogProps {
         emergency_contact_phone?: string;
         license_number?: string;
         license_expiry?: string;
+        salary_type?: 'fixed' | 'per_class' | 'mixed';
+        base_salary?: number;
+        price_per_class?: number;
     };
     children?: React.ReactNode;
 }
@@ -39,7 +44,54 @@ export function EditInstructorDialog({ instructor, children }: EditInstructorDia
     const [open, setOpen] = useState(false);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [salaryType, setSalaryType] = useState<string>(instructor.salary_type || 'per_class');
+
+    // Rates State
+    const [classTypes, setClassTypes] = useState<any[]>([]);
+    const [rates, setRates] = useState<any[]>([]);
+    const [newRateType, setNewRateType] = useState<string>('');
+    const [newRateAmount, setNewRateAmount] = useState<string>('');
+
     const router = useRouter();
+
+    useEffect(() => {
+        if (open) {
+            const fetchData = async () => {
+                const [types, instructorRates] = await Promise.all([
+                    getClassTypes(),
+                    getInstructorRates(instructor.id)
+                ]);
+                setClassTypes(types || []);
+                setRates(instructorRates || []);
+            };
+            fetchData();
+        }
+    }, [open, instructor.id]);
+
+    const handleAddRate = () => {
+        if (!newRateType || !newRateAmount) return;
+
+        // Check if exists
+        if (rates.some(r => r.class_type_id === newRateType)) {
+            return; // Already exists
+        }
+
+        const type = classTypes.find(t => t.id === newRateType);
+
+        setRates([...rates, {
+            class_type_id: newRateType,
+            amount: parseFloat(newRateAmount),
+            instructor_id: instructor.id,
+            // optimistically add name for display
+            class_types: { name: type?.name }
+        }]);
+        setNewRateType('');
+        setNewRateAmount('');
+    };
+
+    const handleRemoveRate = (classTypeId: string) => {
+        setRates(rates.filter(r => r.class_type_id !== classTypeId));
+    };
 
     async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
         e.preventDefault();
@@ -47,6 +99,10 @@ export function EditInstructorDialog({ instructor, children }: EditInstructorDia
         setError(null);
 
         const formData = new FormData(e.currentTarget);
+
+        // Append Rates
+        formData.append('rates', JSON.stringify(rates));
+
         const result = await updateInstructor(instructor.id, formData);
 
         if (result.success) {
@@ -59,6 +115,13 @@ export function EditInstructorDialog({ instructor, children }: EditInstructorDia
         setLoading(false);
     }
 
+    // Helper to get name of class type (handling both optimistic and DB structure if needed)
+    const getTypeName = (rate: any) => {
+        if (rate.class_types?.name) return rate.class_types.name;
+        const type = classTypes.find(t => t.id === rate.class_type_id);
+        return type ? type.name : 'Desconocido';
+    };
+
     return (
         <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
@@ -68,12 +131,12 @@ export function EditInstructorDialog({ instructor, children }: EditInstructorDia
                     </Button>
                 )}
             </DialogTrigger>
-            <DialogContent className="sm:max-w-[500px]">
+            <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
                 <form onSubmit={handleSubmit}>
                     <DialogHeader>
                         <DialogTitle>Editar Instructor</DialogTitle>
                         <DialogDescription>
-                            Modifica los datos del instructor. Los campos marcados con * son obligatorios.
+                            Modifica los datos del instructor y sus tarifas.
                         </DialogDescription>
                     </DialogHeader>
 
@@ -127,6 +190,145 @@ export function EditInstructorDialog({ instructor, children }: EditInstructorDia
                                 defaultValue={instructor.phone || ''}
                                 disabled={loading}
                             />
+                        </div>
+
+                        {/* Configuración de Pago */}
+                        <div className="space-y-4 bg-muted/30 p-4 rounded-lg border border-border/50">
+                            <div className="flex items-center gap-2">
+                                <div className="h-8 w-8 rounded-full bg-emerald-100 flex items-center justify-center">
+                                    <span className="text-emerald-600 font-bold">$</span>
+                                </div>
+                                <Label className="text-base font-semibold">Acuerdo de Pago General</Label>
+                            </div>
+
+                            <div className="grid gap-4 pl-10">
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="space-y-2">
+                                        <Label htmlFor="salary_type">Modalidad</Label>
+                                        <select
+                                            id="salary_type"
+                                            name="salary_type"
+                                            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                                            value={salaryType}
+                                            onChange={(e) => setSalaryType(e.target.value)}
+                                            disabled={loading}
+                                        >
+                                            <option value="per_class">Por Clase (Comisión)</option>
+                                            <option value="fixed">Sueldo Fijo Mensual</option>
+                                            <option value="mixed">Mixto (Fijo + Comisión)</option>
+                                        </select>
+                                    </div>
+
+                                    {(salaryType === 'fixed' || salaryType === 'mixed') && (
+                                        <div className="space-y-2">
+                                            <Label htmlFor="base_salary">Sueldo Base Mensual</Label>
+                                            <div className="relative">
+                                                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">$</span>
+                                                <Input
+                                                    id="base_salary"
+                                                    name="base_salary"
+                                                    type="number"
+                                                    step="0.01"
+                                                    className="pl-7"
+                                                    defaultValue={instructor.base_salary || 0}
+                                                    disabled={loading}
+                                                />
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {(salaryType === 'per_class' || salaryType === 'mixed') && (
+                                        <div className="space-y-2">
+                                            <Label htmlFor="price_per_class">Valor Base por Clase</Label>
+                                            <div className="relative">
+                                                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">$</span>
+                                                <Input
+                                                    id="price_per_class"
+                                                    name="price_per_class"
+                                                    type="number"
+                                                    step="0.01"
+                                                    className="pl-7"
+                                                    defaultValue={instructor.price_per_class || 0}
+                                                    disabled={loading}
+                                                />
+                                            </div>
+                                            <p className="text-[10px] text-muted-foreground">Tarifa por defecto si no hay específica.</p>
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* Tarifas Específicas / Excepciones */}
+                                {(salaryType === 'per_class' || salaryType === 'mixed') && (
+                                    <div className="pt-2 border-t space-y-3">
+                                        <Label className="text-sm font-semibold">Tarifas por Tipo de Clase (Excepciones)</Label>
+
+                                        <div className="flex gap-2 items-end">
+                                            <div className="flex-1 space-y-1">
+                                                <Label className="text-xs">Tipo de Clase</Label>
+                                                <select
+                                                    className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors"
+                                                    value={newRateType}
+                                                    onChange={(e) => setNewRateType(e.target.value)}
+                                                >
+                                                    <option value="">Seleccionar...</option>
+                                                    {classTypes.map(t => (
+                                                        <option key={t.id} value={t.id}>{t.name}</option>
+                                                    ))}
+                                                </select>
+                                            </div>
+                                            <div className="w-24 space-y-1">
+                                                <Label className="text-xs">Monto</Label>
+                                                <Input
+                                                    type="number"
+                                                    className="h-9"
+                                                    value={newRateAmount}
+                                                    onChange={(e) => setNewRateAmount(e.target.value)}
+                                                />
+                                            </div>
+                                            <Button type="button" size="sm" onClick={handleAddRate} disabled={!newRateType || !newRateAmount}>
+                                                <Plus className="h-4 w-4" />
+                                            </Button>
+                                        </div>
+
+                                        {rates.length > 0 && (
+                                            <div className="rounded-md border bg-background">
+                                                <Table>
+                                                    <TableHeader>
+                                                        <TableRow className="h-8 hover:bg-transparent">
+                                                            <TableHead className="h-8 text-xs">Tipo</TableHead>
+                                                            <TableHead className="h-8 text-xs text-right">Monto</TableHead>
+                                                            <TableHead className="h-8 w-[40px]"></TableHead>
+                                                        </TableRow>
+                                                    </TableHeader>
+                                                    <TableBody>
+                                                        {rates.map((rate) => (
+                                                            <TableRow key={rate.class_type_id} className="h-9">
+                                                                <TableCell className="py-1 text-sm font-medium">
+                                                                    {getTypeName(rate)}
+                                                                </TableCell>
+                                                                <TableCell className="py-1 text-sm text-right">
+                                                                    ${rate.amount}
+                                                                </TableCell>
+                                                                <TableCell className="py-1">
+                                                                    <Button
+                                                                        type="button"
+                                                                        variant="ghost"
+                                                                        size="icon"
+                                                                        className="h-6 w-6 text-muted-foreground hover:text-destructive"
+                                                                        onClick={() => handleRemoveRate(rate.class_type_id)}
+                                                                    >
+                                                                        <Trash2 className="h-3 w-3" />
+                                                                    </Button>
+                                                                </TableCell>
+                                                            </TableRow>
+                                                        ))}
+                                                    </TableBody>
+                                                </Table>
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+                            </div>
                         </div>
 
                         <div className="grid grid-cols-2 gap-4">

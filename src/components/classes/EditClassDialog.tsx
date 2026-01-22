@@ -23,9 +23,10 @@ import { useRouter } from 'next/navigation';
 import { Loader2, Trash2, Calendar as CalendarIcon, Clock, User, Car, Edit } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { updateAppointment, cancelAppointment } from '@/app/(auth)/dashboard/classes/actions';
+import { updateAppointment, cancelAppointment, updateAppointmentStatus } from '@/app/(auth)/dashboard/classes/actions';
 import { EvaluationForm } from '@/components/evaluations/EvaluationForm';
 import { EvaluationView } from '@/components/evaluations/EvaluationView';
+import { cn } from '@/lib/utils';
 
 interface EditClassDialogProps {
     resources: {
@@ -128,19 +129,44 @@ export function EditClassDialog({
                         </div>
                     )}
 
-                    {/* Status Badge */}
-                    <div className="flex justify-between items-center">
-                        <Badge
-                            variant={
-                                appointment.status === 'scheduled' ? 'secondary' :
-                                    appointment.status === 'completed' ? 'default' : 'destructive'
-                            }
-                            className="bg-blue-100 text-blue-800 hover:bg-blue-100 text-sm px-3 py-1"
-                        >
-                            {appointment.status === 'scheduled' ? 'Agendado' :
-                                appointment.status === 'completed' ? 'Completado' : 'Cancelado'}
-                        </Badge>
-                        <span className="text-sm text-muted-foreground">
+                    {/* Status Badge / Quick Action */}
+                    <div className="flex justify-between items-center bg-muted/40 p-3 rounded-lg border">
+                        <div className="flex items-center gap-3">
+                            <Label className="text-sm font-medium">Estado:</Label>
+                            <Select
+                                defaultValue={appointment.status}
+                                onValueChange={async (val) => {
+                                    setLoading(true);
+                                    // Optimistic update could go here, but for now wait for server
+                                    const res = await updateAppointmentStatus(appointment.id, val);
+                                    if (res.success) {
+                                        router.refresh();
+                                        // Optional: toast success
+                                    } else {
+                                        setError(res.error || 'Error al actualizar estado');
+                                    }
+                                    setLoading(false);
+                                }}
+                                disabled={loading}
+                            >
+                                <SelectTrigger className={cn(
+                                    "w-[140px] h-8 text-xs font-medium border-0 focus:ring-0 focus:ring-offset-0",
+                                    appointment.status === 'scheduled' ? "bg-blue-100 text-blue-800 hover:bg-blue-200" :
+                                        appointment.status === 'completed' ? "bg-emerald-100 text-emerald-800 hover:bg-emerald-200" :
+                                            appointment.status === 'cancelled' ? "bg-red-100 text-red-800 hover:bg-red-200" :
+                                                "bg-gray-100 text-gray-800"
+                                )}>
+                                    <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="scheduled">Agendado</SelectItem>
+                                    <SelectItem value="completed">Completado</SelectItem>
+                                    <SelectItem value="cancelled">Cancelado</SelectItem>
+                                    <SelectItem value="rescheduled" disabled>Reprogramado</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+                        <span className="text-xs text-muted-foreground font-mono">
                             ID: {appointment.id.slice(0, 8)}
                         </span>
                     </div>

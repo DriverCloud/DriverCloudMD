@@ -1,5 +1,5 @@
 import { createClient } from '@/lib/supabase/server';
-import { Users, Mail, Phone, Calendar, User, PauseCircle, CheckCircle, Award, XCircle, LogOut, LayoutGrid } from 'lucide-react';
+import { Users, Mail, Phone, Calendar, User, PauseCircle, CheckCircle, Award, XCircle, LogOut, LayoutGrid, Check, X, CreditCard } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { CreateStudentDialog } from '@/components/students/CreateStudentDialog';
 import { EditStudentDialog } from '@/components/students/EditStudentDialog';
@@ -51,14 +51,22 @@ export default async function StudentsPage({
         query = query.or(`first_name.ilike.%${searchQuery}%,last_name.ilike.%${searchQuery}%`);
     }
 
-    const { data: students, error } = await query
-        .order('created_at', { ascending: false });
+    // Prepare queries
+    const studentsQuery = query.order('created_at', { ascending: false });
 
-    // Fetch all status counts
-    const { data: statusCountsData } = await supabase
+    const statusCountsQuery = supabase
         .from('students')
         .select('status')
         .is('deleted_at', null);
+
+    // Execute in parallel
+    const [
+        { data: students, error },
+        { data: statusCountsData }
+    ] = await Promise.all([
+        studentsQuery,
+        statusCountsQuery
+    ]);
 
     const counts: Record<string, number> = {
         active: 0,
@@ -78,18 +86,6 @@ export default async function StudentsPage({
 
     if (error) {
         console.error('Error fetching students:', error);
-    }
-
-    // Fetch balances from view
-    const { data: balances } = await supabase
-        .from('view_student_balances')
-        .select('student_id, balance');
-
-    const balanceMap = new Map();
-    if (balances) {
-        balances.forEach((b: any) => {
-            balanceMap.set(b.student_id, b.balance);
-        });
     }
 
     const totalStudents = students?.length || 0;
@@ -144,7 +140,7 @@ export default async function StudentsPage({
                 <div className="flex gap-3">
                     {!isInstructor && (
                         <>
-                            <ExportStudentsButton students={students || []} balanceMap={balanceMap} />
+                            <ExportStudentsButton students={students || []} />
                             <CreateStudentDialog />
                         </>
                     )}
@@ -152,17 +148,28 @@ export default async function StudentsPage({
             </div>
 
             {/* Filters and Search Toolbar */}
-            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+            <div className="flex flex-col gap-4">
+                <div className="flex justify-start w-full">
+                    <StudentSearch />
+                </div>
+
                 <div className="flex flex-wrap items-center gap-2 bg-card border rounded-xl p-1.5 shadow-sm overflow-x-auto">
                     {filters.map((f) => {
                         const Icon = f.icon;
                         const isActive = statusFilter === f.id;
                         const count = counts[f.id] || 0;
 
+                        // Explicitly construct query to ensure clean navigation state
+                        const query: Record<string, string> = { status: f.id };
+                        if (params.search) {
+                            query.search = params.search;
+                        }
+
                         return (
                             <Link
                                 key={f.id}
-                                href={{ pathname: '/dashboard/students', query: { ...params, status: f.id } }}
+                                href={{ pathname: '/dashboard/students', query }}
+                                scroll={false}
                                 className={cn(
                                     "flex items-center gap-2 px-3 py-1.5 text-xs md:text-sm font-medium rounded-lg transition-all whitespace-nowrap",
                                     isActive
@@ -184,8 +191,6 @@ export default async function StudentsPage({
                         );
                     })}
                 </div>
-
-                <StudentSearch />
             </div>
 
             {/* Students Table */}
@@ -207,7 +212,7 @@ export default async function StudentsPage({
                             students.map((student) => {
                                 const registrationDate = new Date(student.created_at);
                                 const formattedDate = `${registrationDate.getDate()}/${registrationDate.getMonth() + 1}/${registrationDate.getFullYear()}`;
-                                const balance = balanceMap.get(student.id) || 0;
+                                const balance = student.balance || 0;
 
                                 // Gender colors
                                 const genderColorClass = student.gender === 'male'
@@ -259,10 +264,18 @@ export default async function StudentsPage({
                                             </span>
                                         </TableCell>
                                         <TableCell>
-                                            <div className={cn("font-bold text-sm",
-                                                balance < 0 ? "text-rose-600" : "text-emerald-600"
-                                            )}>
-                                                ${balance.toLocaleString()}
+                                            <div className="flex items-center justify-center">
+                                                {balance >= 0 ? (
+                                                    <div className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-emerald-50 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-800/50">
+                                                        <Check className="h-3.5 w-3.5" />
+                                                        <span className="text-[10px] font-bold uppercase tracking-wider">Al día</span>
+                                                    </div>
+                                                ) : (
+                                                    <div className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-rose-50 text-rose-700 dark:bg-rose-900/20 dark:text-rose-400 border border-rose-100 dark:border-rose-800/50">
+                                                        <X className="h-3.5 w-3.5" />
+                                                        <span className="text-[10px] font-bold uppercase tracking-wider">Deuda</span>
+                                                    </div>
+                                                )}
                                             </div>
                                         </TableCell>
                                         <TableCell>

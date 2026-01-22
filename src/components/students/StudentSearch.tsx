@@ -11,7 +11,16 @@ export function StudentSearch() {
     const searchParams = useSearchParams()
     const [query, setQuery] = useState(searchParams.get('search') || '')
 
+    // Keep local query in sync with URL (e.g. when clearing filters)
     useEffect(() => {
+        setQuery(searchParams.get('search') || '')
+    }, [searchParams])
+
+    useEffect(() => {
+        // Only run if the query differs from what's currently in the URL
+        const currentSearch = searchParams.get('search') || ''
+        if (query === currentSearch) return
+
         const timeoutId = setTimeout(() => {
             const params = new URLSearchParams(searchParams.toString())
             if (query) {
@@ -19,11 +28,11 @@ export function StudentSearch() {
             } else {
                 params.delete('search')
             }
-            router.push(`?${params.toString()}`)
+            router.push(`?${params.toString()}`, { scroll: false })
         }, 500)
 
         return () => clearTimeout(timeoutId)
-    }, [query, router, searchParams])
+    }, [query, router]) // Removed searchParams to avoid loops
 
     return (
         <div className="relative w-full md:w-80">

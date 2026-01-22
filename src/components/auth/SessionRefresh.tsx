@@ -16,9 +16,6 @@ export function SessionRefresh() {
             if (event === 'SIGNED_OUT') {
                 router.push('/login')
             }
-            if (event === 'TOKEN_REFRESHED') {
-                router.refresh()
-            }
         })
 
         return () => subscription.unsubscribe()

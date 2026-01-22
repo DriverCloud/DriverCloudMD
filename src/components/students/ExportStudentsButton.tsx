@@ -7,10 +7,9 @@ import autoTable from 'jspdf-autotable';
 
 interface ExportStudentsButtonProps {
     students: any[];
-    balanceMap: Map<string, number>;
 }
 
-export function ExportStudentsButton({ students, balanceMap }: ExportStudentsButtonProps) {
+export function ExportStudentsButton({ students }: ExportStudentsButtonProps) {
     const handleExport = () => {
         const doc = new jsPDF();
 
@@ -36,7 +35,7 @@ export function ExportStudentsButton({ students, balanceMap }: ExportStudentsBut
         };
 
         students.forEach(student => {
-            const balance = balanceMap.get(student.id) || 0;
+            const balance = student.balance || 0;
             const studentData = [
                 `${student.first_name} ${student.last_name}`,
                 student.email || 'N/A',

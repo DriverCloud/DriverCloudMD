@@ -17,15 +17,15 @@ export function SearchBar() {
     const handleSearch = (e: React.FormEvent) => {
         e.preventDefault();
         if (query.trim()) {
-            router.push(`/dashboard/students?search=${encodeURIComponent(query)}`);
+            router.push(`/dashboard/students?search=${encodeURIComponent(query)}`, { scroll: false });
         } else {
-            router.push(`/dashboard/students`);
+            router.push(`/dashboard/students`, { scroll: false });
         }
     };
 
     const handleClear = () => {
         setQuery("");
-        router.push(`/dashboard/students`);
+        router.push(`/dashboard/students`, { scroll: false });
     };
 
     return (

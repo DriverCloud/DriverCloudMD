@@ -7,8 +7,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { Banknote, CreditCard, Building2, Smartphone, HelpCircle, TrendingUp, TrendingDown, Wallet } from 'lucide-react';
+import { Banknote, CreditCard, Building2, Smartphone, HelpCircle, TrendingUp, TrendingDown, Wallet, Users } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
+import Link from 'next/link';
 
 function getPaymentMethodBadge(method: string) {
     const methodConfig: Record<string, { label: string; icon: any; variant: 'default' | 'secondary' | 'outline' }> = {
@@ -49,6 +51,12 @@ export default async function FinancePage() {
                     <p className="text-muted-foreground">Control de ingresos, gastos y balance general.</p>
                 </div>
                 <div className="flex gap-2">
+                    <Link href="/dashboard/finance/instructors">
+                        <Button variant="outline">
+                            <Users className="mr-2 h-4 w-4" />
+                            Sueldos Instructores
+                        </Button>
+                    </Link>
                     <RegisterPaymentDialog students={resources.students || []} />
                     <RegisterExpenseDialog />
                 </div>
