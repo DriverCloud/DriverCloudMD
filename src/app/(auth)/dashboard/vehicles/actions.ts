@@ -3,7 +3,9 @@
 import { createClient } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
 
-export async function createVehicle(formData: FormData) {
+import { ActionState } from "@/types";
+
+export async function createVehicle(formData: FormData): Promise<ActionState> {
     const supabase = await createClient();
 
     // Get the current user to determine school/owner context

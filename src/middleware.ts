@@ -29,7 +29,8 @@ export async function middleware(request: NextRequest) {
         }
     )
 
-    // Refresh session if expired
+    // Queries:
+    // 1. Check if user is logged in
     const {
         data: { user },
     } = await supabase.auth.getUser()
@@ -44,11 +45,44 @@ export async function middleware(request: NextRequest) {
         return NextResponse.redirect(url)
     }
 
-    // If user IS logged in and tries to access login or base page
-    if (user && (path === '/login' || path === '/')) {
-        const url = request.nextUrl.clone()
-        url.pathname = '/dashboard'
-        return NextResponse.redirect(url)
+    // If user IS logged in
+    if (user) {
+        // Fetch user role
+        // NOTE: In production, consider a more efficient way (e.g. metadata) to avoid DB hit on every request
+        // But for this scale, it is acceptable.
+        const { data: membership } = await supabase
+            .from('memberships')
+            .select('role')
+            .eq('user_id', user.id)
+            .single();
+
+        const role = membership?.role;
+        const url = request.nextUrl.clone();
+
+        // SCENARIO 1: Student trying to access Dashboard or Login
+        if (role === 'student' && (path.startsWith('/dashboard') || path === '/login' || path === '/')) {
+            url.pathname = '/portal' // Correct path for student portal
+            return NextResponse.redirect(url)
+        }
+
+        // SCENARIO 2: Admin/Staff trying to access Portal or Login
+        if ((role === 'admin' || role === 'director' || role === 'owner') && (path.startsWith('/portal') || path === '/login' || path === '/')) {
+            // Allow viewing portal if explicitly needed? usually not. Keep separation strict for now.
+            // Actually, admins might want to see portal? Let's restrict for now to avoid confusion.
+            url.pathname = '/dashboard'
+            return NextResponse.redirect(url)
+        }
+
+        // SCENARIO 3: Accessing generic root '/'
+        if (path === '/') {
+            if (role === 'student') {
+                url.pathname = '/portal'
+                return NextResponse.redirect(url)
+            } else {
+                url.pathname = '/dashboard'
+                return NextResponse.redirect(url)
+            }
+        }
     }
 
     return supabaseResponse

@@ -3,11 +3,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 
-export type ActionState = {
-    success: boolean;
-    error?: string;
-    data?: any;
-};
+import { ActionState } from "@/types";
 
 export async function createStudent(formData: FormData): Promise<ActionState> {
     const supabase = await createClient();
