@@ -12,6 +12,7 @@ import {
     DialogTrigger,
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import {
     Select,
@@ -196,6 +197,15 @@ export function CreateClassDialog({
                                     ))}
                                 </SelectContent>
                             </Select>
+                        </div>
+
+                        <div className="space-y-2">
+                            <Label htmlFor="notes">Notas (Opcional)</Label>
+                            <Textarea
+                                name="notes"
+                                placeholder="Detalles adicionales sobre la clase..."
+                                className="resize-none"
+                            />
                         </div>
                     </div>
 

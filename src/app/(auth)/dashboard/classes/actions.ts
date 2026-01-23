@@ -18,6 +18,7 @@ export async function getAppointments(startDate: string, endDate: string, studen
             start_time,
             end_time,
             status,
+            notes,
             student_id,
             instructor_id,
             vehicle_id,
@@ -183,6 +184,7 @@ export async function createAppointment(formData: FormData) {
     const classTypeId = formData.get('class_type_id') as string;
     const date = formData.get('date') as string;
     const startTime = formData.get('start_time') as string;
+    const notes = formData.get('notes') as string;
 
     const { data: classType } = await supabase
         .from('class_types')
@@ -321,6 +323,7 @@ export async function createAppointment(formData: FormData) {
         start_time: startTime,
         end_time: endTime,
         status: 'scheduled',
+        notes: notes || null,
         created_by: user.id,
         package_id: activePackage.id,
         class_number: classNumber
@@ -403,6 +406,7 @@ export async function updateAppointment(appointmentId: string, formData: FormDat
     const classTypeId = formData.get('class_type_id') as string;
     const date = formData.get('date') as string;
     const startTime = formData.get('start_time') as string;
+    const notes = formData.get('notes') as string;
 
     // Fetch class type duration
     const { data: classType } = await supabase
@@ -460,6 +464,7 @@ export async function updateAppointment(appointmentId: string, formData: FormDat
             start_time: startTime,
             end_time: endTime,
             status: newStatus,
+            notes: notes || null,
         })
         .eq('id', appointmentId)
         .select()

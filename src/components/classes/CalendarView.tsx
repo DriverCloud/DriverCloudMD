@@ -14,6 +14,14 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
+import {
+    ContextMenu,
+    ContextMenuContent,
+    ContextMenuItem,
+    ContextMenuTrigger,
+    ContextMenuSeparator,
+} from '@/components/ui/context-menu';
+import { updateAppointmentStatus } from '@/app/(auth)/dashboard/classes/actions';
 import { CreateClassDialog } from './CreateClassDialog';
 import { EditClassDialog } from './EditClassDialog';
 
@@ -290,40 +298,83 @@ export function CalendarView({ appointments, currentDate, view, resources, filte
                                             const appDuration = app.class_type?.duration_minutes || 60;
 
                                             return (
-                                                <div
-                                                    key={app.id}
-                                                    className={cn(
-                                                        "absolute rounded p-1 text-xs border shadow-sm cursor-pointer hover:shadow-md transition-shadow z-20",
-                                                        finalColors.bg,
-                                                        finalColors.border,
-                                                        finalColors.text,
-                                                        app.status === 'cancelled' && "line-through opacity-60"
-                                                    )}
-                                                    style={{
-                                                        top: `${(appStartMinute / 60) * 60}px`,
-                                                        left: `${index * widthPercent}%`,
-                                                        width: `${widthPercent - 2}%`,
-                                                        height: `${appDuration}px`
-                                                    }}
-                                                    onClick={(e) => {
-                                                        e.stopPropagation(); // Prevent slot click
-                                                        handleAppointmentClick(app);
-                                                    }}
-                                                >
-                                                    <div className="font-semibold truncate text-[10px]">
-                                                        {app.student?.first_name} {app.student?.last_name}
-                                                    </div>
-                                                    {app.class_number && app.package?.total_credits && (
-                                                        <div className="text-[9px] opacity-90 font-medium">
-                                                            {app.class_type?.duration_minutes >= 90
-                                                                ? `Clase ${app.class_number} y ${app.class_number + 1}`
-                                                                : `Clase ${app.class_number}`} de {app.package.total_credits}
+                                                <ContextMenu key={app.id}>
+                                                    <ContextMenuTrigger>
+                                                        <div
+                                                            className={cn(
+                                                                "absolute rounded p-1 text-xs border shadow-sm cursor-pointer hover:shadow-md transition-shadow z-20",
+                                                                finalColors.bg,
+                                                                finalColors.border,
+                                                                finalColors.text,
+                                                                app.status === 'cancelled' && "line-through opacity-60"
+                                                            )}
+                                                            style={{
+                                                                top: `${(appStartMinute / 60) * 60}px`,
+                                                                left: `${index * widthPercent}%`,
+                                                                width: `${widthPercent - 2}%`,
+                                                                height: `${appDuration}px`
+                                                            }}
+                                                            onClick={(e) => {
+                                                                e.stopPropagation(); // Prevent slot click
+                                                                handleAppointmentClick(app);
+                                                            }}
+                                                        >
+                                                            <div className="font-semibold truncate text-[10px]">
+                                                                {app.student?.first_name} {app.student?.last_name}
+                                                            </div>
+                                                            {app.class_number && app.package?.total_credits && (
+                                                                <div className="text-[9px] opacity-90 font-medium">
+                                                                    {app.class_type?.duration_minutes >= 90
+                                                                        ? `Clase ${app.class_number} y ${app.class_number + 1}`
+                                                                        : `Clase ${app.class_number}`} de {app.package.total_credits}
+                                                                </div>
+                                                            )}
+                                                            <div className="truncate opacity-75 text-[9px]">
+                                                                {app.start_time.slice(0, 5)} - {app.vehicle?.brand}
+                                                            </div>
                                                         </div>
-                                                    )}
-                                                    <div className="truncate opacity-75 text-[9px]">
-                                                        {app.start_time.slice(0, 5)} - {app.vehicle?.brand}
-                                                    </div>
-                                                </div>
+                                                    </ContextMenuTrigger>
+                                                    <ContextMenuContent>
+                                                        <ContextMenuItem onClick={() => handleAppointmentClick(app)}>
+                                                            <Pencil className="mr-2 h-4 w-4" />
+                                                            Editar / Ver Detalles
+                                                        </ContextMenuItem>
+                                                        <ContextMenuSeparator />
+                                                        <ContextMenuItem
+                                                            disabled={app.status === 'completed'}
+                                                            onClick={async () => {
+                                                                await updateAppointmentStatus(app.id, 'completed');
+                                                                router.refresh();
+                                                            }}
+                                                        >
+                                                            <CheckCircle className="mr-2 h-4 w-4 text-green-600" />
+                                                            Marcar Completado
+                                                        </ContextMenuItem>
+                                                        {app.status !== 'scheduled' && (
+                                                            <ContextMenuItem
+                                                                onClick={async () => {
+                                                                    await updateAppointmentStatus(app.id, 'scheduled');
+                                                                    router.refresh();
+                                                                }}
+                                                            >
+                                                                <Clock className="mr-2 h-4 w-4 text-blue-600" />
+                                                                Restaurar a Agendado
+                                                            </ContextMenuItem>
+                                                        )}
+                                                        <ContextMenuItem
+                                                            disabled={app.status === 'cancelled'}
+                                                            onClick={async () => {
+                                                                if (confirm('¿Cancelar esta clase?')) {
+                                                                    await updateAppointmentStatus(app.id, 'cancelled');
+                                                                    router.refresh();
+                                                                }
+                                                            }}
+                                                        >
+                                                            <XCircle className="mr-2 h-4 w-4 text-red-600" />
+                                                            Cancelar
+                                                        </ContextMenuItem>
+                                                    </ContextMenuContent>
+                                                </ContextMenu>
                                             );
                                         })}
                                     </div>

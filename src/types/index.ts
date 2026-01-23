@@ -89,3 +89,28 @@ export interface VehicleDocument {
     notes?: string;
     created_at: string;
 }
+
+export interface Appointment {
+    id: string;
+    school_id: string;
+    owner_id: string;
+    location_id: string;
+    student_id: string;
+    instructor_id: string;
+    vehicle_id: string;
+    class_type_id: string;
+    scheduled_date: string;
+    start_time: string;
+    end_time: string;
+    status: 'scheduled' | 'completed' | 'cancelled' | 'rescheduled';
+    notes?: string;
+    class_number?: number;
+    created_at: string;
+    updated_at: string;
+    // Relations (simplified)
+    student?: { first_name: string; last_name: string };
+    instructor?: { first_name: string; last_name: string };
+    vehicle?: { brand: string; model: string; license_plate: string };
+    class_type?: { name: string; duration_minutes: number };
+    package?: { total_credits: number };
+}

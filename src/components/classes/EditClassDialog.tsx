@@ -11,6 +11,7 @@ import {
     DialogTitle,
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import {
     Select,
@@ -283,6 +284,17 @@ export function EditClassDialog({
                                 </Select>
                                 {isInstructor && <input type="hidden" name="vehicle_id" value={appointment.vehicle_id} />}
                             </div>
+
+                            <div className="space-y-2">
+                                <Label htmlFor="notes">Notas</Label>
+                                <Textarea
+                                    name="notes"
+                                    defaultValue={appointment.notes || ''}
+                                    placeholder="Detalles sobre la clase..."
+                                    readOnly={isInstructor}
+                                    className={cn("resize-none", isInstructor && "bg-muted text-muted-foreground")}
+                                />
+                            </div>
                         </>
                     ) : (
                         <>
@@ -329,6 +341,15 @@ export function EditClassDialog({
                                             {appointment.vehicle?.brand} {appointment.vehicle?.model}
                                         </div>
                                     </div>
+
+                                    {appointment.notes && (
+                                        <div className="grid gap-1">
+                                            <Label className="text-xs text-muted-foreground">Notas</Label>
+                                            <div className="text-sm bg-muted/50 p-2 rounded-md">
+                                                {appointment.notes}
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                         </>
@@ -400,6 +421,6 @@ export function EditClassDialog({
                     )}
                 </DialogFooter>
             </DialogContent>
-        </Dialog>
+        </Dialog >
     );
 }
