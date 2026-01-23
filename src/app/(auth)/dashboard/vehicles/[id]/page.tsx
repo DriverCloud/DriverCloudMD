@@ -8,9 +8,10 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { AddMaintenanceDialog } from '@/components/vehicles/AddMaintenanceDialog';
 import { AddDocumentDialog } from '@/components/vehicles/AddDocumentDialog';
-import { cn } from '@/lib/utils'; // Assuming utils exists
+import { DeleteDocumentButton } from '@/components/vehicles/DeleteDocumentButton';
+import { cn } from '@/lib/utils';
 
-export default async function VehicleDetailPage({ params }: { params: { id: string } }) {
+export default async function VehicleDetailPage({ params }: { params: Promise<{ id: string }> }) {
     const supabase = await createClient();
     const { id } = await params;
 
@@ -197,11 +198,16 @@ export default async function VehicleDetailPage({ params }: { params: { id: stri
                                         isExpired ? "border-l-destructive" : isSoon ? "border-l-orange-500" : "border-l-emerald-500"
                                     )}>
                                         <CardHeader>
-                                            <CardTitle className="text-base flex justify-between">
-                                                {doc.type}
-                                                {isExpired && <Badge variant="destructive">Vencido</Badge>}
-                                                {isSoon && <Badge className="bg-orange-500 hover:bg-orange-600">Vence Pronto</Badge>}
-                                                {!isExpired && !isSoon && <Badge className="bg-emerald-500 hover:bg-emerald-600">Vigente</Badge>}
+                                            <CardTitle className="text-base flex justify-between items-start">
+                                                <div className="flex flex-col gap-2">
+                                                    <span>{doc.type}</span>
+                                                    <div className="flex gap-2">
+                                                        {isExpired && <Badge variant="destructive">Vencido</Badge>}
+                                                        {isSoon && <Badge className="bg-orange-500 hover:bg-orange-600">Vence Pronto</Badge>}
+                                                        {!isExpired && !isSoon && <Badge className="bg-emerald-500 hover:bg-emerald-600">Vigente</Badge>}
+                                                    </div>
+                                                </div>
+                                                <DeleteDocumentButton documentId={doc.id} vehicleId={id} />
                                             </CardTitle>
                                             <CardDescription>
                                                 Vence: {expiry.toLocaleDateString()}

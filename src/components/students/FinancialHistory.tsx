@@ -25,13 +25,13 @@ export function FinancialHistory({ packages, payments }: FinancialHistoryProps) 
 
                     <TabsContent value="transactions" className="space-y-4 pt-4">
                         <div className="rounded-md border">
-                            <table className="w-full text-sm">
+                            <table className="w-full text-sm table-fixed">
                                 <thead className="bg-muted/50">
                                     <tr className="border-b">
-                                        <th className="p-3 text-left">Fecha</th>
-                                        <th className="p-3 text-left">Tipo</th>
-                                        <th className="p-3 text-left">Detalle</th>
-                                        <th className="p-3 text-right">Monto</th>
+                                        <th className="p-3 text-left w-[20%]">Fecha</th>
+                                        <th className="p-3 text-left w-[25%]">Tipo</th>
+                                        <th className="p-3 text-left w-[30%]">Detalle</th>
+                                        <th className="p-3 text-right w-[25%]">Monto</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -44,7 +44,7 @@ export function FinancialHistory({ packages, payments }: FinancialHistoryProps) 
                                                 </Badge>
                                             </td>
                                             <td className="p-3 text-muted-foreground">{p.notes || '-'}</td>
-                                            <td className="p-3 text-right font-medium text-emerald-600">
+                                            <td className="p-3 text-right font-medium text-emerald-600 whitespace-nowrap">
                                                 +${p.amount.toLocaleString()}
                                             </td>
                                         </tr>
@@ -60,7 +60,7 @@ export function FinancialHistory({ packages, payments }: FinancialHistoryProps) 
                                             <td className="p-3 text-muted-foreground">
                                                 {pkg.name} ({pkg.total_credits} clases)
                                             </td>
-                                            <td className="p-3 text-right font-medium text-rose-600">
+                                            <td className="p-3 text-right font-medium text-rose-600 whitespace-nowrap">
                                                 -${pkg.price.toLocaleString()}
                                             </td>
                                         </tr>
@@ -101,7 +101,7 @@ export function FinancialHistory({ packages, payments }: FinancialHistoryProps) 
                                 </div>
                             ))}
                             {packages.length === 0 && (
-                                <div className="col-span-2 text-center py-8 text-muted-foreground">No hay paquetes activos</div>
+                                <div className="col-span-2 text-center py-8 text-muted-foreground">No se han registrado compras de paquetes</div>
                             )}
                         </div>
                     </TabsContent>

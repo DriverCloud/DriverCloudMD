@@ -302,3 +302,124 @@ export async function getVehicleEfficiency(filters?: ReportFilters) {
         })).sort((a, b) => b.classes - a.classes)
     }
 }
+
+export async function getHeatmapData(filters?: ReportFilters) {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return { success: false, error: 'No autenticado' }
+
+    let query = supabase.from('appointments').select('scheduled_date, start_time').eq('status', 'completed')
+
+    if (filters?.locationId) query = query.eq('location_id', filters.locationId)
+    // Default to last 30 days if no date filter to show relevant trends
+    const startDate = filters?.startDate || format(subMonths(new Date(), 1), 'yyyy-MM-dd')
+    const endDate = filters?.endDate || format(new Date(), 'yyyy-MM-dd')
+
+    query = query.gte('scheduled_date', startDate).lte('scheduled_date', endDate)
+
+    const { data: appointments } = await query
+
+    // Initialize 7 days x 24 hours grid
+    const heatmap: number[][] = Array(7).fill(0).map(() => Array(24).fill(0))
+
+    appointments?.forEach(app => {
+        const date = new Date(app.scheduled_date + 'T' + app.start_time)
+        const day = date.getDay() // 0 = Sunday
+        const hour = date.getHours()
+        heatmap[day][hour]++
+    })
+
+    return {
+        success: true,
+        data: heatmap
+    }
+}
+
+export async function getKPIData(filters?: ReportFilters) {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return { success: false, error: 'No autenticado' }
+
+    // 1. Approval Rate (Graduated vs Failed)
+    let studentQuery = supabase.from('students').select('status')
+    if (filters?.locationId) studentQuery = studentQuery.eq('location_id', filters.locationId)
+
+    // For KPIs we usually look at all time or a longer period, but respecting filters if present
+    if (filters?.startDate) studentQuery = studentQuery.gte('created_at', filters.startDate)
+    if (filters?.endDate) studentQuery = studentQuery.lte('created_at', filters.endDate + 'T23:59:59')
+
+    const { data: students } = await studentQuery
+
+    const graduated = students?.filter(s => s.status === 'graduated').length || 0
+    const failed = students?.filter(s => s.status === 'failed').length || 0
+    const totalFinished = graduated + failed
+    const approvalRate = totalFinished > 0 ? (graduated / totalFinished) * 100 : 0
+
+    // 2. LTV (Total Income / Total Paying Students)
+    let paymentQuery = supabase.from('payments').select('amount, student_id')
+    if (filters?.locationId) paymentQuery = paymentQuery.eq('location_id', filters.locationId)
+
+    const { data: payments } = await paymentQuery
+    const totalRevenue = payments?.reduce((sum, p) => sum + Number(p.amount), 0) || 0
+    const uniqueStudents = new Set(payments?.map(p => p.student_id)).size
+    const ltv = uniqueStudents > 0 ? totalRevenue / uniqueStudents : 0
+
+    // 3. Occupancy Rate (Estimated)
+    // Assume capacity = # Instructors * 6 classes/day * days in period
+    // This is a rough estimate.
+
+    const { count: instructorCount } = await supabase.from('instructors').select('*', { count: 'exact', head: true }).eq('active', true)
+
+    let appointmentQuery = supabase.from('appointments').select('id', { count: 'exact' }).neq('status', 'cancelled')
+    if (filters?.locationId) appointmentQuery = appointmentQuery.eq('location_id', filters.locationId)
+    if (filters?.startDate) appointmentQuery = appointmentQuery.gte('scheduled_date', filters.startDate)
+    if (filters?.endDate) appointmentQuery = appointmentQuery.lte('scheduled_date', filters.endDate)
+
+    const { count: classCount } = await appointmentQuery
+
+    // Calculate days in period
+    const start = filters?.startDate ? new Date(filters.startDate) : subMonths(new Date(), 1)
+    const end = filters?.endDate ? new Date(filters.endDate) : new Date()
+    const daysDiff = Math.max(1, Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)))
+
+    // Theoretical capacity: Instructors * 6 slots * Days
+    // If no instructors, avoid division by zero
+    const capacity = (instructorCount || 1) * 6 * daysDiff
+    const occupancyRate = capacity > 0 ? ((classCount || 0) / capacity) * 100 : 0
+
+    return {
+        success: true,
+        data: {
+            approvalRate,
+            ltv,
+            occupancyRate,
+            totalGraduated: graduated,
+            totalFailed: failed
+        }
+    }
+}
+
+export async function getExpensesByCategory(filters?: ReportFilters) {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return { success: false, error: 'No autenticado' }
+
+    let query = supabase.from('expenses').select('amount, type')
+    if (filters?.locationId) query = query.eq('location_id', filters.locationId)
+    if (filters?.startDate) query = query.gte('date', filters.startDate)
+    if (filters?.endDate) query = query.lte('date', filters.endDate)
+
+    const { data: expenses } = await query
+
+    const byCategory: Record<string, number> = {}
+    expenses?.forEach(e => {
+        const type = e.type || 'Otros'
+        byCategory[type] = (byCategory[type] || 0) + Number(e.amount)
+    })
+
+    return {
+        success: true,
+        data: Object.entries(byCategory).map(([type, amount]) => ({ name: type, value: amount }))
+            .sort((a, b) => b.value - a.value)
+    }
+}
