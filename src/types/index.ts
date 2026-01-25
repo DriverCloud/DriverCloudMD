@@ -22,6 +22,7 @@ export interface Student {
     emergency_contact_relation?: string;
     gender?: string;
     status: 'active' | 'graduated' | 'inactive' | 'deleted';
+    user_id?: string; // Linked Supabase Auth User ID
     created_at: string;
     updated_at: string;
     deleted_at?: string;
@@ -41,6 +42,11 @@ export interface Vehicle {
     created_at: string;
     updated_at: string;
     deleted_at?: string;
+    // Maintenance
+    current_mileage?: number;
+    last_service_mileage?: number;
+    service_interval_km?: number;
+    last_service_date?: string;
 }
 
 export interface Instructor {

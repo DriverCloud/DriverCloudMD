@@ -1,6 +1,7 @@
 import { KPICards } from "@/components/dashboard/KPICards";
 import { ActivityChart } from "@/components/dashboard/ActivityChart";
 import { RecentActivity } from "@/components/dashboard/RecentActivity";
+import { MaintenanceAlerts } from "@/components/dashboard/MaintenanceAlerts";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import {
@@ -41,6 +42,9 @@ export default async function DashboardPage() {
             </div>
 
             <KPICards userRole={role} />
+
+            {/* Maintenance Alerts Logic: Only visible if there are alerts (handled inside component) */}
+            {!isInstructor && <MaintenanceAlerts />}
 
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
                 {!isInstructor && <ActivityChart />}
