@@ -45,8 +45,9 @@ export function CreateClassDialog({
     onOpenChange: setControlledOpen,
     defaultDate,
     defaultTime,
-    trigger
-}: CreateClassDialogProps) {
+    trigger,
+    defaultStudentId
+}: CreateClassDialogProps & { defaultStudentId?: string }) {
     const [internalOpen, setInternalOpen] = useState(false);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -115,7 +116,7 @@ export function CreateClassDialog({
 
                         <div className="space-y-2">
                             <Label htmlFor="student_id">Estudiante *</Label>
-                            <Select name="student_id" required>
+                            <Select name="student_id" required defaultValue={defaultStudentId}>
                                 <SelectTrigger>
                                     <SelectValue placeholder="Seleccionar estudiante" />
                                 </SelectTrigger>

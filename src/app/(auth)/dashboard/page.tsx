@@ -1,5 +1,5 @@
 import { KPICards } from "@/components/dashboard/KPICards";
-import { RevenueChart } from "@/components/dashboard/RevenueChart";
+import { ActivityChart } from "@/components/dashboard/ActivityChart";
 import { RecentActivity } from "@/components/dashboard/RecentActivity";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
@@ -43,7 +43,7 @@ export default async function DashboardPage() {
             <KPICards userRole={role} />
 
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
-                {!isInstructor && <RevenueChart />} {/* Simplify: Hide chart for instructor */}
+                {!isInstructor && <ActivityChart />}
                 <div className={isInstructor ? "col-span-7" : "col-span-3"}>
                     <RecentActivity />
                 </div>

@@ -4,17 +4,48 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Package, DollarSign } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger,
+} from "@/components/ui/dialog";
+import { PaymentModal } from '@/features/finance/components/PaymentModal';
 
 interface FinancialHistoryProps {
     packages: any[];
     payments: any[];
+    studentId?: string;
 }
 
-export function FinancialHistory({ packages, payments }: FinancialHistoryProps) {
+export function FinancialHistory({ packages, payments, studentId }: FinancialHistoryProps) {
     return (
         <Card>
             <CardHeader>
-                <CardTitle>Historial Financiero</CardTitle>
+                <div className="flex justify-between items-center">
+                    <CardTitle>Historial Financiero</CardTitle>
+                    {studentId && (
+                        <Dialog>
+                            <DialogTrigger asChild>
+                                <Button size="sm" className="bg-emerald-600 hover:bg-emerald-700 text-white">
+                                    <DollarSign className="mr-2 h-4 w-4" />
+                                    Registrar Pago
+                                </Button>
+                            </DialogTrigger>
+                            <DialogContent className="sm:max-w-[425px]">
+                                <DialogHeader>
+                                    <DialogTitle>Registrar Pago</DialogTitle>
+                                </DialogHeader>
+                                <PaymentModal
+                                    defaultStudentId={studentId}
+                                    onSuccess={() => window.location.reload()}
+                                />
+                            </DialogContent>
+                        </Dialog>
+                    )}
+                </div>
             </CardHeader>
             <CardContent>
                 <Tabs defaultValue="transactions" className="w-full">

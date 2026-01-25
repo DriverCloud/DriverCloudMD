@@ -34,13 +34,20 @@ const formSchema = z.object({
 
 type PaymentFormValues = z.infer<typeof formSchema>;
 
-export function PaymentModal({ onSuccess }: { onSuccess?: () => void }) {
-    const [students, setStudents] = useState<{ id: string, name: string }[]>([]);
+import { generatePaymentReceipt } from "@/lib/pdf-generator";
+
+interface PaymentModalProps {
+    onSuccess?: () => void;
+    defaultStudentId?: string;
+}
+
+export function PaymentModal({ onSuccess, defaultStudentId }: PaymentModalProps) {
+    const [students, setStudents] = useState<{ id: string, name: string, data: any }[]>([]);
 
     const form = useForm<PaymentFormValues>({
         resolver: zodResolver(formSchema),
         defaultValues: {
-            student_id: "",
+            student_id: defaultStudentId || "",
             amount: 0,
             payment_method: "",
             notes: "",
@@ -53,23 +60,41 @@ export function PaymentModal({ onSuccess }: { onSuccess?: () => void }) {
             const supabase = createClient();
             const { data } = await supabase
                 .from('students')
-                .select('id, first_name, last_name')
+                .select('*') // Select all to have data for receipt
                 .order('last_name');
 
             if (data) {
                 setStudents(data.map(s => ({
                     id: s.id,
-                    name: `${s.last_name}, ${s.first_name}`
+                    name: `${s.last_name}, ${s.first_name}`,
+                    data: s
                 })));
+
+                // If defaultStudentId provided, ensure form is set (though defaultValues handles init, 
+                // this handles updates if modal re-opens with different props, theoretically)
+                if (defaultStudentId) {
+                    form.setValue('student_id', defaultStudentId);
+                }
             }
         };
         fetchStudents();
-    }, []);
+    }, [defaultStudentId, form]);
 
     async function onSubmit(values: PaymentFormValues) {
         try {
-            await paymentsService.createPayment(values);
+            // Create payment
+            const result = await paymentsService.createPayment(values);
             toast.success("Pago registrado exitosamente");
+
+            // Generate Receipt
+            // Find student data
+            const student = students.find(s => s.id === values.student_id);
+            if (student) {
+                // Pass the result (payment object with ID) or construct a mimic
+                generatePaymentReceipt({ ...values, id: result?.id || 'TEMP' }, student.data);
+                toast.info("Generando recibo...");
+            }
+
             form.reset();
             onSuccess?.();
         } catch (error) {
@@ -81,30 +106,33 @@ export function PaymentModal({ onSuccess }: { onSuccess?: () => void }) {
     return (
         <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                <FormField
-                    control={form.control}
-                    name="student_id"
-                    render={({ field }) => (
-                        <FormItem>
-                            <FormLabel>Estudiante</FormLabel>
-                            <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                <FormControl>
-                                    <SelectTrigger>
-                                        <SelectValue placeholder="Seleccionar estudiante" />
-                                    </SelectTrigger>
-                                </FormControl>
-                                <SelectContent>
-                                    {students.map((student) => (
-                                        <SelectItem key={student.id} value={student.id}>
-                                            {student.name}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                            <FormMessage />
-                        </FormItem>
-                    )}
-                />
+                {/* Hide Student Select if default is provided to simplify UI, or just disable it */}
+                {!defaultStudentId && (
+                    <FormField
+                        control={form.control}
+                        name="student_id"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Estudiante</FormLabel>
+                                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                    <FormControl>
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="Seleccionar estudiante" />
+                                        </SelectTrigger>
+                                    </FormControl>
+                                    <SelectContent>
+                                        {students.map((student) => (
+                                            <SelectItem key={student.id} value={student.id}>
+                                                {student.name}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+                )}
 
                 <div className="grid grid-cols-2 gap-4">
                     <FormField
@@ -150,7 +178,26 @@ export function PaymentModal({ onSuccess }: { onSuccess?: () => void }) {
                     />
                 </div>
 
-                <Button type="submit" className="w-full">Registrar Pago</Button>
+                <FormField
+                    control={form.control}
+                    name="notes"
+                    render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Notas</FormLabel>
+                            <FormControl>
+                                <Input
+                                    placeholder="Descripción opcional"
+                                    {...field}
+                                />
+                            </FormControl>
+                            <FormMessage />
+                        </FormItem>
+                    )}
+                />
+
+                <Button type="submit" className="w-full">
+                    {defaultStudentId ? "Registrar y Generar Recibo" : "Registrar Pago"}
+                </Button>
             </form>
         </Form>
     );

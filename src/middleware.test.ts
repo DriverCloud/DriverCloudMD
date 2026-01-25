@@ -10,7 +10,14 @@ vi.mock('@supabase/ssr', () => ({
     createServerClient: () => ({
         auth: {
             getUser: mockGetUser
-        }
+        },
+        from: vi.fn(() => ({
+            select: vi.fn(() => ({
+                eq: vi.fn(() => ({
+                    single: vi.fn().mockResolvedValue({ data: { role: 'admin' } })
+                }))
+            }))
+        }))
     })
 }))
 

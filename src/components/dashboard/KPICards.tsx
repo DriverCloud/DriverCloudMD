@@ -16,6 +16,8 @@ export function KPICards({ userRole }: KPICardsProps) {
         vehicles: 0,
         availableVehicles: 0,
         income: 0,
+        classesTotal: 0,
+        classesCompleted: 0
     });
 
     const isInstructor = userRole === 'instructor';
@@ -24,10 +26,11 @@ export function KPICards({ userRole }: KPICardsProps) {
         const fetchStats = async () => {
             const supabase = createClient();
 
-            // Fetch Students Count
+            // Fetch Students Count (Active only)
             const { count: studentsCount } = await supabase
                 .from('students')
-                .select('*', { count: 'exact', head: true });
+                .select('*', { count: 'exact', head: true })
+                .eq('status', 'active');
 
             // Fetch Vehicles (Total & Available)
             const { data: vehicles } = await supabase
@@ -36,6 +39,16 @@ export function KPICards({ userRole }: KPICardsProps) {
 
             const totalVehicles = vehicles?.length || 0;
             const available = vehicles?.filter(v => v.status === 'active').length || 0;
+
+            // Fetch Today's Classes
+            const todayStr = new Date().toISOString().split('T')[0];
+            const { data: classesToday } = await supabase
+                .from('appointments')
+                .select('status')
+                .eq('scheduled_date', todayStr);
+
+            const totalClasses = classesToday?.length || 0;
+            const completedClasses = classesToday?.filter(c => c.status === 'completed' || c.status === 'rated').length || 0;
 
             // Fetch Real Income (Only if not instructor)
             let income = 0;
@@ -47,7 +60,9 @@ export function KPICards({ userRole }: KPICardsProps) {
                 students: studentsCount || 0,
                 vehicles: totalVehicles,
                 availableVehicles: available,
-                income: income
+                income: income,
+                classesTotal: totalClasses,
+                classesCompleted: completedClasses
             });
         };
 
@@ -65,9 +80,15 @@ export function KPICards({ userRole }: KPICardsProps) {
                         <Calendar className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold">--</div>
-                        <p className="text-xs text-muted-foreground">
-                            Ver calendario para detalles
+                        <div className="text-2xl font-bold">{stats.classesCompleted} / {stats.classesTotal}</div>
+                        <div className="mt-2 h-2 w-full bg-secondary rounded-full overflow-hidden">
+                            <div
+                                className="h-full bg-primary transition-all duration-500"
+                                style={{ width: `${stats.classesTotal > 0 ? (stats.classesCompleted / stats.classesTotal) * 100 : 0}%` }}
+                            />
+                        </div>
+                        <p className="text-xs text-muted-foreground mt-2">
+                            {stats.classesCompleted} completadas, {stats.classesTotal - stats.classesCompleted} por dictar
                         </p>
                     </CardContent>
                 </Card>
@@ -115,7 +136,7 @@ export function KPICards({ userRole }: KPICardsProps) {
                 <CardContent>
                     <div className="text-2xl font-bold">{stats.students}</div>
                     <p className="text-xs text-muted-foreground">
-                        Total registrados
+                        Total registrados (Activos)
                     </p>
                 </CardContent>
             </Card>
@@ -125,9 +146,15 @@ export function KPICards({ userRole }: KPICardsProps) {
                     <Calendar className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                    <div className="text-2xl font-bold">12 / 18</div>
-                    <p className="text-xs text-muted-foreground">
-                        6 completadas, 6 por dictar
+                    <div className="text-2xl font-bold">{stats.classesCompleted} / {stats.classesTotal}</div>
+                    <div className="mt-2 h-2 w-full bg-secondary rounded-full overflow-hidden">
+                        <div
+                            className="h-full bg-primary transition-all duration-500"
+                            style={{ width: `${stats.classesTotal > 0 ? (stats.classesCompleted / stats.classesTotal) * 100 : 0}%` }}
+                        />
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-2">
+                        {stats.classesCompleted} completadas, {stats.classesTotal - stats.classesCompleted} por dictar
                     </p>
                 </CardContent>
             </Card>

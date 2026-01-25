@@ -1,9 +1,12 @@
 import { createClient } from '@/lib/supabase/server';
 import { notFound } from 'next/navigation';
 import { StudentProfileHeader } from '@/components/students/StudentProfileHeader';
+import { StudentPersonalInfoCard } from '@/components/students/StudentPersonalInfoCard';
 import { ClassHistory } from '@/components/students/ClassHistory';
 import { FinancialHistory } from '@/components/students/FinancialHistory';
 import { getUserRole } from '@/app/actions/auth';
+import { StudentBalanceCard } from '@/components/students/StudentBalanceCard';
+import { getResources } from '../../classes/actions';
 
 export default async function StudentDetailPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = await params;
@@ -58,23 +61,42 @@ export default async function StudentDetailPage({ params }: { params: Promise<{ 
         .eq('student_id', id)
         .order('payment_date', { ascending: false });
 
-    // 6. Fetch User Role
+    // 6. Fetch User Role & Resources (for dialogs)
     const userRole = await getUserRole();
+    const resources = await getResources();
 
     return (
         <div className="flex flex-col gap-6 max-w-7xl mx-auto">
-            {/* Profile Header */}
-            <StudentProfileHeader student={student} balance={balance} userRole={userRole} />
+            {/* Full Width Header */}
+            <StudentProfileHeader
+                student={student}
+                balance={balance}
+                userRole={userRole}
+                resources={resources}
+                packages={packages || []}
+            />
 
             <div className="grid gap-6 lg:grid-cols-3">
-                {/* Left Column: Classes */}
+                {/* Left Column: Info & Classes (2/3 width) */}
                 <div className="space-y-6 lg:col-span-2">
+                    {/* Personal Info Card (Aligned with Balance Card) */}
+                    <StudentPersonalInfoCard student={student} />
+
+                    {/* Classes */}
                     <ClassHistory appointments={appointments || []} />
                 </div>
 
-                {/* Right Column: Finance */}
+                {/* Right Column: Finance (1/3 width) */}
                 <div className="space-y-6">
-                    <FinancialHistory packages={packages || []} payments={payments || []} />
+                    {/* Balance Card */}
+                    <StudentBalanceCard balance={balance} />
+
+                    {/* Financial History */}
+                    <FinancialHistory
+                        packages={packages || []}
+                        payments={payments || []}
+                        studentId={id}
+                    />
                 </div>
             </div>
         </div>
