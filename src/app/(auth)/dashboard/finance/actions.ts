@@ -13,7 +13,8 @@ export async function getPayments() {
         .from('payments')
         .select(`
             *,
-            student:students(first_name, last_name)
+            student:students(first_name, last_name),
+            creator_name
         `)
         .order('payment_date', { ascending: false });
 
@@ -77,7 +78,7 @@ export async function getExpenses() {
 
     const { data, error } = await supabase
         .from('expenses')
-        .select('*')
+        .select('*, creator_name')
         .order('date', { ascending: false });
 
     if (error) {
@@ -115,7 +116,8 @@ export async function createExpense(formData: FormData) {
         category: type,
         description: description,
         amount: amount,
-        payment_method: method
+        payment_method: method,
+        created_by: user.id
     });
 
     if (error) {

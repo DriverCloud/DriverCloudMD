@@ -8,13 +8,14 @@ import { createClient } from '@/lib/supabase/server';
 export default async function ClassesPage({
     searchParams
 }: {
-    searchParams: Promise<{ date?: string; view?: string; instructorId?: string; vehicleId?: string }>;
+    searchParams: Promise<{ date?: string; view?: string; instructorId?: string; vehicleId?: string; studentId?: string }>;
 }) {
     const params = await searchParams;
     const dateParam = params.date;
     const viewParam = params.view;
     const instructorId = params.instructorId;
     const vehicleId = params.vehicleId;
+    const studentIdParam = params.studentId;
 
     const date = dateParam ? new Date(dateParam) : new Date();
     const view = viewParam || 'week';
@@ -95,7 +96,7 @@ export default async function ClassesPage({
                             />
                         </div>
                     )}
-                    {!isInstructor && <CreateClassDialog resources={resources} />}
+                    {!isInstructor && <CreateClassDialog resources={resources} defaultStudentId={studentIdParam} />}
                 </div>
             </div>
 

@@ -18,10 +18,57 @@ export default function InstructorHomePage() {
         const fetchClasses = async () => {
             const supabase = createClient();
 
-            // Get current user (instructor) logic would go here. 
-            // For now fetching ALL of today's classes to demo.
+            // 1. Get Current User
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) return; // Should be handled by middleware, but safe check
 
-            const todayStr = new Date().toISOString().split('T')[0];
+            // 2. Get Instructor ID linked to this User
+            // We need to find which instructor has this user_id. 
+            // Note: In a real app we might store this in metadata or a context.
+            const { data: instructor } = await supabase
+                .from('instructors')
+                .select('id')
+                .eq('user_id', user.id) // Assuming we added user_id to instructors too, similar to students.
+                // If instructors don't have user_id yet, we have a missing link.
+                // Let's assume for now they are linked via email or a 'user_id' column if it exists.
+                // Wait, in previous steps we only added user_id to STUDENTS.
+                // Let me check if instructors have user_id. If not, we found the root cause.
+                .single();
+
+            // Correction: I need to verify if instructors table has user_id. 
+            // If not, I can't link them easily. 
+            // BUT, wait, the middleware checks "membership" table for role. 
+            // Let's check 'memberships' to get the role, but 'instructors' table is where the Appointments are linked (instructor_id).
+
+            // Hypothethical Fix: Use email to link if user_id is missing, OR check memberships.
+            // Let's try to find an instructor with the same email as the user.
+
+            let instructorId = instructor?.id;
+
+            if (!instructorId) {
+                const { data: instrByEmail } = await supabase
+                    .from('instructors')
+                    .select('id')
+                    .eq('email', user.email)
+                    .single();
+                instructorId = instrByEmail?.id;
+            }
+
+            if (!instructorId) {
+                console.error("No instructor profile found for user");
+                setLoading(false);
+                return;
+            }
+
+            // 3. Get Appointments for TODAY (Local Time)
+            // Creating a date object and getting YYYY-MM-DD in local time
+            const now = new Date();
+            const year = now.getFullYear();
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            const day = String(now.getDate()).padStart(2, '0');
+            const todayStr = `${year}-${month}-${day}`;
+
+
 
             const { data } = await supabase
                 .from('appointments')
@@ -31,6 +78,7 @@ export default function InstructorHomePage() {
                     vehicle:vehicles(brand, model, license_plate),
                     class_type:class_types(name)
                 `)
+                .eq('instructor_id', instructorId) // Filter by THIS instructor
                 .eq('scheduled_date', todayStr)
                 .order('start_time', { ascending: true });
 

@@ -9,6 +9,7 @@ import { SellPackageDialog } from './SellPackageDialog';
 import { EditStudentDialog } from './EditStudentDialog';
 import { CreateClassDialog } from '../classes/CreateClassDialog';
 import { Progress } from "@/components/ui/progress";
+import Link from "next/link";
 import { inviteStudent, resetStudentPassword } from "@/app/actions/student-auth";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useState } from "react";
@@ -163,16 +164,12 @@ export function StudentProfileHeader({ student, balance, userRole, resources, pa
                                 )}
 
                                 {resources && (
-                                    <CreateClassDialog
-                                        resources={resources}
-                                        defaultStudentId={student.id}
-                                        trigger={
-                                            <Button variant="default" size="sm" className="bg-blue-600 hover:bg-blue-700 text-white">
-                                                <Calendar className="mr-2 h-4 w-4" />
-                                                Agendar Clase
-                                            </Button>
-                                        }
-                                    />
+                                    <Button asChild variant="default" size="sm" className="bg-blue-600 hover:bg-blue-700 text-white">
+                                        <Link href={`/dashboard/classes?studentId=${student.id}`}>
+                                            <Calendar className="mr-2 h-4 w-4" />
+                                            Ver Calendario de Clases
+                                        </Link>
+                                    </Button>
                                 )}
                                 <EditStudentDialog student={student} />
                                 <SellPackageDialog studentId={student.id} studentName={`${student.first_name} ${student.last_name}`} />

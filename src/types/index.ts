@@ -96,6 +96,15 @@ export interface VehicleDocument {
     created_at: string;
 }
 
+export interface MaintenanceSchedule {
+    id: string;
+    vehicle_id: string;
+    service_name: string;
+    interval_km: number;
+    last_service_km: number;
+    last_service_date?: string;
+}
+
 export interface Appointment {
     id: string;
     school_id: string;

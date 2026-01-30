@@ -3,12 +3,13 @@ import { notFound } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Car, Calendar, DollarSign, FileText, AlertTriangle, ArrowLeft } from 'lucide-react';
+import { Car, Calendar, DollarSign, FileText, AlertTriangle, ArrowLeft, Gauge } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { AddMaintenanceDialog } from '@/components/vehicles/AddMaintenanceDialog';
 import { AddDocumentDialog } from '@/components/vehicles/AddDocumentDialog';
 import { DeleteDocumentButton } from '@/components/vehicles/DeleteDocumentButton';
+import { MaintenanceScheduleManager } from "@/components/vehicles/MaintenanceScheduleManager";
 import { cn } from '@/lib/utils';
 
 export default async function VehicleDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -36,6 +37,11 @@ export default async function VehicleDetailPage({ params }: { params: Promise<{ 
         .select('*')
         .eq('vehicle_id', id)
         .order('expiry_date', { ascending: true });
+
+    const { data: schedules } = await supabase
+        .from('vehicle_maintenance_schedules')
+        .select('*')
+        .eq('vehicle_id', id);
 
     // Calculate totals
     const totalMaintenanceCost = maintenance?.reduce((sum, item) => sum + (item.cost || 0), 0) || 0;
@@ -96,11 +102,25 @@ export default async function VehicleDetailPage({ params }: { params: Promise<{ 
                 </div>
             )}
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
                 {/* Stats Card */}
                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Costo Total Mantenimiento</CardTitle>
+                        <CardTitle className="text-sm font-medium">Odómetro Actual</CardTitle>
+                        <Gauge className="h-4 w-4 text-emerald-600" />
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-2xl font-bold text-emerald-700">
+                            {vehicle.current_mileage ? `${vehicle.current_mileage.toLocaleString()} km` : '0 km'}
+                        </div>
+                        <p className="text-xs text-muted-foreground mt-1">
+                            Actualizado automáticamente
+                        </p>
+                    </CardContent>
+                </Card>
+                <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <CardTitle className="text-sm font-medium">Costo Mantenimiento</CardTitle>
                         <DollarSign className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
@@ -134,49 +154,61 @@ export default async function VehicleDetailPage({ params }: { params: Promise<{ 
                 </TabsList>
 
                 <TabsContent value="maintenance" className="mt-6">
-                    <div className="flex justify-between items-center mb-4">
-                        <h2 className="text-xl font-semibold">Registro de Servicios</h2>
-                        <AddMaintenanceDialog vehicleId={id} />
-                    </div>
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        {/* Left Column: History (2/3 width) */}
+                        <div className="lg:col-span-2 space-y-4">
+                            <div className="flex justify-between items-center">
+                                <h2 className="text-xl font-semibold">Registro de Servicios</h2>
+                                <AddMaintenanceDialog vehicleId={id} />
+                            </div>
 
-                    <Card>
-                        <div className="relative w-full overflow-auto">
-                            <table className="w-full caption-bottom text-sm">
-                                <thead className="[&_tr]:border-b">
-                                    <tr className="border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted">
-                                        <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground">Fecha</th>
-                                        <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground">Tipo</th>
-                                        <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground">Detalle</th>
-                                        <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground">Proveedor</th>
-                                        <th className="h-12 px-4 text-right align-middle font-medium text-muted-foreground">KMs</th>
-                                        <th className="h-12 px-4 text-right align-middle font-medium text-muted-foreground">Costo</th>
-                                    </tr>
-                                </thead>
-                                <tbody className="[&_tr:last-child]:border-0">
-                                    {maintenance && maintenance.length > 0 ? (
-                                        maintenance.map((item) => (
-                                            <tr key={item.id} className="border-b transition-colors hover:bg-muted/50">
-                                                <td className="p-4 align-middle">{new Date(item.date).toLocaleDateString()}</td>
-                                                <td className="p-4 align-middle font-medium">{item.type}</td>
-                                                <td className="p-4 align-middle text-muted-foreground">{item.description}</td>
-                                                <td className="p-4 align-middle">{item.provider || '-'}</td>
-                                                <td className="p-4 align-middle text-right">{item.mileage?.toLocaleString() || '-'}</td>
-                                                <td className="p-4 align-middle text-right font-medium">
-                                                    {item.cost ? `$${item.cost.toLocaleString()}` : '-'}
-                                                </td>
+                            <Card>
+                                <div className="relative w-full overflow-auto">
+                                    <table className="w-full caption-bottom text-sm">
+                                        <thead className="[&_tr]:border-b">
+                                            <tr className="border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted">
+                                                <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground">Fecha</th>
+                                                <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground">Tipo</th>
+                                                <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground">Detalle</th>
+                                                <th className="h-12 px-4 text-right align-middle font-medium text-muted-foreground">KMs</th>
+                                                <th className="h-12 px-4 text-right align-middle font-medium text-muted-foreground">Costo</th>
                                             </tr>
-                                        ))
-                                    ) : (
-                                        <tr>
-                                            <td colSpan={6} className="p-8 text-center text-muted-foreground">
-                                                No hay registros de mantenimiento
-                                            </td>
-                                        </tr>
-                                    )}
-                                </tbody>
-                            </table>
+                                        </thead>
+                                        <tbody className="[&_tr:last-child]:border-0">
+                                            {maintenance && maintenance.length > 0 ? (
+                                                maintenance.map((item) => (
+                                                    <tr key={item.id} className="border-b transition-colors hover:bg-muted/50">
+                                                        <td className="p-4 align-middle">{new Date(item.date).toLocaleDateString()}</td>
+                                                        <td className="p-4 align-middle font-medium">{item.type}</td>
+                                                        <td className="p-4 align-middle text-muted-foreground">{item.description}</td>
+                                                        <td className="p-4 align-middle text-right">{item.mileage?.toLocaleString() || '-'}</td>
+                                                        <td className="p-4 align-middle text-right font-medium">
+                                                            {item.cost ? `$${item.cost.toLocaleString()}` : '-'}
+                                                        </td>
+                                                    </tr>
+                                                ))
+                                            ) : (
+                                                <tr>
+                                                    <td colSpan={5} className="p-8 text-center text-muted-foreground">
+                                                        No hay registros de mantenimiento
+                                                    </td>
+                                                </tr>
+                                            )}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </Card>
                         </div>
-                    </Card>
+
+                        {/* Right Column: Rules (1/3 width) */}
+                        <div className="lg:col-span-1">
+                            <MaintenanceScheduleManager
+                                vehicleId={id}
+                                currentMileage={vehicle.current_mileage || 0}
+                                schedules={schedules || []}
+                            />
+                        </div>
+                    </div>
                 </TabsContent>
 
                 <TabsContent value="documents" className="mt-6">

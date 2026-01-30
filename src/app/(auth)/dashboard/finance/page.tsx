@@ -121,6 +121,7 @@ export default async function FinancePage() {
                                 <thead className="[&_tr]:border-b">
                                     <tr className="border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted">
                                         <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground">Fecha</th>
+                                        <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground">Usuario</th>
                                         <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground">Estudiante</th>
                                         <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground">Método</th>
                                         <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground">Notas</th>
@@ -133,6 +134,9 @@ export default async function FinancePage() {
                                             <tr key={payment.id} className="border-b transition-colors hover:bg-muted/50">
                                                 <td className="p-4 align-middle">
                                                     {payment.payment_date ? format(new Date(payment.payment_date), 'dd/MM/yyyy') : '-'}
+                                                </td>
+                                                <td className="p-4 align-middle text-sm text-muted-foreground">
+                                                    {payment.creator_name || '-'}
                                                 </td>
                                                 <td className="p-4 align-middle font-medium">
                                                     {payment.student?.first_name} {payment.student?.last_name}
@@ -150,7 +154,7 @@ export default async function FinancePage() {
                                         ))
                                     ) : (
                                         <tr>
-                                            <td colSpan={5} className="p-8 text-center text-muted-foreground">
+                                            <td colSpan={6} className="p-8 text-center text-muted-foreground">
                                                 No hay pagos registrados.
                                             </td>
                                         </tr>
@@ -168,6 +172,7 @@ export default async function FinancePage() {
                                 <thead className="[&_tr]:border-b">
                                     <tr className="border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted">
                                         <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground">Fecha</th>
+                                        <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground">Usuario</th>
                                         <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground">Categoría</th>
                                         <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground">Descripción</th>
                                         <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground">Método</th>
@@ -180,6 +185,9 @@ export default async function FinancePage() {
                                             <tr key={expense.id} className="border-b transition-colors hover:bg-muted/50">
                                                 <td className="p-4 align-middle">
                                                     {expense.date ? format(new Date(expense.date), 'dd/MM/yyyy') : '-'}
+                                                </td>
+                                                <td className="p-4 align-middle text-sm text-muted-foreground">
+                                                    {expense.creator_name || '-'}
                                                 </td>
                                                 <td className="p-4 align-middle">
                                                     <Badge variant="outline">{expense.category}</Badge>
@@ -197,7 +205,7 @@ export default async function FinancePage() {
                                         ))
                                     ) : (
                                         <tr>
-                                            <td colSpan={5} className="p-8 text-center text-muted-foreground">
+                                            <td colSpan={6} className="p-8 text-center text-muted-foreground">
                                                 No hay gastos registrados.
                                             </td>
                                         </tr>

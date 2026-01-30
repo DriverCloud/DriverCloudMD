@@ -4,11 +4,15 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { CheckCircle2, MapPin, AlertCircle, ArrowLeft } from "lucide-react";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { toast } from "sonner";
 import { use } from "react";
+import { completeClass } from "@/app/actions/instructor";
 
 export default function ClassDetailPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = use(params);
@@ -69,34 +73,35 @@ export default function ClassDetailPage({ params }: { params: Promise<{ id: stri
     const [currentMileage, setCurrentMileage] = useState('');
     const [classNotes, setClassNotes] = useState('');
 
+
+
+    // ... inside component ...
+
     const handleUpdateStatus = async (newStatus: string, mileage?: number, notes?: string) => {
-        const supabase = createClient();
-
-        const updateData: any = { status: newStatus };
-
-        // If notes are present, save them
-        if (notes && notes.trim()) {
-            updateData.notes = notes;
-        }
-        if (mileage) {
-            updateData.end_mileage = mileage;
-        }
-
-        const { error } = await supabase
-            .from('appointments')
-            .update(updateData)
-            .eq('id', id);
-
-        if (error) {
-            toast.error("Error al actualizar");
-        } else {
-            toast.success(`Clase marcada como ${newStatus}`);
-            router.refresh(); // Refresh current route
-            // Manually update local state to reflect change immediately
-            setCls((prev: any) => ({ ...prev, status: newStatus }));
-
-            if (newStatus === 'completed') {
+        if (newStatus === 'completed' && mileage !== undefined && notes !== undefined) {
+            const result = await completeClass(id, mileage, notes);
+            if (!result.success) {
+                toast.error(`Error: ${result.error}`);
+            } else {
+                toast.success("Clase finalizada correctamente");
                 router.push('/instructor');
+            }
+        } else {
+            // For simple status updates (like 'in_progress') keep using client or create another action
+            // Keeping client for now for 'in_progress' to minimize change surface, 
+            // but really 'complete' is the one failing.
+            const supabase = createClient();
+            const { error } = await supabase
+                .from('appointments')
+                .update({ status: newStatus })
+                .eq('id', id);
+
+            if (error) {
+                toast.error("Error al actualizar estado");
+            } else {
+                toast.success("Estado actualizado");
+                router.refresh();
+                setCls((prev: any) => ({ ...prev, status: newStatus }));
             }
         }
     };

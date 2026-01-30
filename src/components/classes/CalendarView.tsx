@@ -69,6 +69,7 @@ export function CalendarView({ appointments, currentDate, view, resources, filte
     const [selectedDate, setSelectedDate] = useState<string>('');
     const [selectedTime, setSelectedTime] = useState<string>('');
     const [selectedAppointment, setSelectedAppointment] = useState<any | null>(null);
+    const [expandedClusterId, setExpandedClusterId] = useState<string | null>(null);
 
     const handlePrev = () => {
         const newDate = subWeeks(currentDate, 1);
@@ -197,15 +198,15 @@ export function CalendarView({ appointments, currentDate, view, resources, filte
                 </div>
             </div>
 
-            {/* Calendar Grid */}
+            {/* Calendar Grid (Column-based for better overlap handling) */}
             <div className="flex-1 overflow-auto">
-                <div className="min-w-[800px] h-full">
-                    {/* Header Row (Days) */}
-                    <div className="grid grid-cols-[60px_1fr_1fr_1fr_1fr_1fr_1fr_1fr] border-b bg-muted/20 sticky top-0 z-30">
-                        <div className="p-2 border-r text-xs text-muted-foreground text-center content-center bg-muted/20">Hora</div>
+                <div className="min-w-[800px]">
+                    <div className="grid grid-cols-[60px_repeat(7,1fr)]">
+                        {/* Header Row (Days) */}
+                        <div className="p-2 border-r text-xs text-muted-foreground text-center content-center bg-muted/20 sticky top-0 z-30">Hora</div>
                         {weekDays.map((day) => (
                             <div key={day.toString()} className={cn(
-                                "p-2 text-center border-r last:border-r-0 bg-muted/20",
+                                "p-2 text-center border-r last:border-r-0 bg-muted/20 sticky top-0 z-30",
                                 isSameDay(day, new Date()) && "bg-primary/10"
                             )}>
                                 <div className="text-xs text-muted-foreground capitalize">
@@ -219,58 +220,71 @@ export function CalendarView({ appointments, currentDate, view, resources, filte
                                 </div>
                             </div>
                         ))}
-                    </div>
 
-                    {/* Time Slots */}
-                    {timeSlots.map((hour) => (
-                        <div key={hour} className="grid grid-cols-[60px_1fr_1fr_1fr_1fr_1fr_1fr_1fr] border-b last:border-b-0">
-                            {/* Time Label */}
-                            <div className="p-2 border-r text-xs text-muted-foreground text-right pr-3 -mt-2.5 bg-background sticky left-0 z-10">
-                                {`${hour}:00`}
-                            </div>
+                        {/* Time Labels Column */}
+                        <div className="bg-background sticky left-0 z-20 border-r border-b-0">
+                            {timeSlots.map((hour) => (
+                                <div key={hour} className="h-[60px] border-b text-xs text-muted-foreground text-right pr-2 pt-1 relative">
+                                    <span className="-top-2.5 absolute right-2">{`${hour}:00`}</span>
+                                </div>
+                            ))}
+                        </div>
 
-                            {/* Columns for each day */}
-                            {weekDays.map((day) => {
-                                // Find appointments for this slot
-                                const dayStr = format(day, 'yyyy-MM-dd');
+                        {/* Day Columns */}
+                        {weekDays.map((day) => {
+                            const dayStr = format(day, 'yyyy-MM-dd');
 
-                                const slotApps = appointments.filter(app => {
-                                    if (app.scheduled_date !== dayStr) return false;
-                                    const appHour = parseInt(app.start_time.split(':')[0]);
-                                    return appHour === hour;
-                                });
+                            // Filter appointments for this day
+                            // We now include 'completed' and 'cancelled' in the main flow so they don't break the layout structure.
+                            // However, we might want to hide cancelled or simple cross them out. 
+                            // The user specifically asked for 'completed' to remain in the structure.
+                            // Let's include everything except maybe rejected/deleted if those existed. 
+                            const dayApps = appointments.filter(app =>
+                                app.scheduled_date === dayStr
+                                // We include ALL statuses so the grid structure remains consistent.
+                                // If you want to hide cancelled, uncomment the next line:
+                                // && app.status !== 'cancelled'
+                            ).sort((a, b) => { // Sort by start time, then duration
+                                const startA = parseInt(a.start_time.split(':')[0]) * 60 + parseInt(a.start_time.split(':')[1]);
+                                const startB = parseInt(b.start_time.split(':')[0]) * 60 + parseInt(b.start_time.split(':')[1]);
+                                if (startA !== startB) return startA - startB;
+                                return (b.class_type?.duration_minutes || 60) - (a.class_type?.duration_minutes || 60);
+                            });
 
-                                // Calculate width for each appointment if multiple
-                                const appCount = slotApps.length;
-                                const widthPercent = appCount > 0 ? 100 / appCount : 100;
+                            // otherApps is now likely empty or reserved for really special statuses if any
+                            const otherApps: any[] = [];
 
-                                const freeSlots = showAvailability ? calculateFreeSlots(day, hour) : [];
+                            return (
+                                <div key={day.toString()} className={cn(
+                                    "border-r last:border-r-0 relative min-h-[780px]", // 13 slots * 60px
+                                    isSameDay(day, new Date()) && "bg-primary/5"
+                                )}>
+                                    {/* Background Slots (Clickable) */}
+                                    {timeSlots.map((hour) => (
+                                        <div
+                                            key={hour}
+                                            className="h-[60px] border-b hover:bg-muted/5 transition-colors"
+                                            onClick={() => handleSlotClick(dayStr, hour)}
+                                        />
+                                    ))}
 
-                                return (
-                                    <div
-                                        key={day.toString()}
-                                        className="border-r last:border-r-0 relative min-h-[60px] group transition-colors hover:bg-muted/5 cursor-pointer"
-                                        onClick={() => handleSlotClick(dayStr, hour)}
-                                    >
-                                        {/* Render free slots */}
-                                        {showAvailability && freeSlots.map((slot, index) => {
-                                            const startMinute = slot.start.getMinutes();
-                                            const endMinute = slot.end.getMinutes();
-                                            const durationMinutes = (slot.end.getTime() - slot.start.getTime()) / (1000 * 60);
-
-                                            // Only render if the slot starts within this hour
-                                            if (slot.start.getHours() !== hour) return null;
+                                    {/* Availability Layer */}
+                                    {showAvailability && timeSlots.map(hour => {
+                                        const freeSlots = calculateFreeSlots(day, hour);
+                                        return freeSlots.map((slot, idx) => {
+                                            const startMin = slot.start.getMinutes();
+                                            const duration = (slot.end.getTime() - slot.start.getTime()) / (1000 * 60);
+                                            const topOffset = ((hour - 8) * 60) + startMin;
 
                                             return (
                                                 <div
-                                                    key={`free-${index}`}
-                                                    className="absolute bg-green-200/50 border border-green-300 text-green-800 rounded p-1 text-[10px] flex items-center justify-center"
+                                                    key={`free-${hour}-${idx}`}
+                                                    className="absolute bg-green-200/50 border border-green-300 text-green-800 rounded p-1 text-[10px] flex items-center justify-center z-10 cursor-pointer pointer-events-auto"
                                                     style={{
-                                                        top: `${(startMinute / 60) * 60}px`,
+                                                        top: `${topOffset}px`,
                                                         left: '2%',
                                                         width: '96%',
-                                                        height: `${durationMinutes}px`,
-                                                        zIndex: 10,
+                                                        height: `${duration}px`,
                                                     }}
                                                     onClick={(e) => {
                                                         e.stopPropagation();
@@ -279,109 +293,264 @@ export function CalendarView({ appointments, currentDate, view, resources, filte
                                                 >
                                                     Disponible
                                                 </div>
-                                            );
-                                        })}
+                                            )
+                                        });
+                                    })}
 
-                                        {/* Render appointments */}
-                                        {slotApps.map((app, index) => {
-                                            const vehicleColors = getVehicleColor(app.vehicle_id || 'default');
+                                    {/* Active Apps Layer with Grouping */}
+                                    {(() => {
+                                        // Simple clustering: group overlapping intervals
+                                        const clusters: { start: number; end: number; apps: any[] }[] = [];
 
-                                            // Override colors if cancelled or completed
-                                            let finalColors = vehicleColors;
-                                            if (app.status === 'completed') {
-                                                finalColors = { bg: 'bg-green-100', border: 'border-green-300', text: 'text-green-900' };
-                                            } else if (app.status === 'cancelled') {
-                                                finalColors = { bg: 'bg-red-50', border: 'border-red-200', text: 'text-red-800' };
+                                        dayApps.forEach(app => {
+                                            const appStart = parseInt(app.start_time.split(':')[0]) * 60 + parseInt(app.start_time.split(':')[1]);
+                                            const duration = app.class_type?.duration_minutes || 60;
+                                            const appEnd = appStart + duration;
+
+                                            const lastCluster = clusters[clusters.length - 1];
+                                            if (lastCluster && appStart < lastCluster.end - 10) {
+                                                lastCluster.apps.push(app);
+                                                lastCluster.end = Math.max(lastCluster.end, appEnd);
+                                            } else {
+                                                clusters.push({ start: appStart, end: appEnd, apps: [app] });
+                                            }
+                                        });
+
+                                        return clusters.map((cluster, cIdx) => {
+                                            const isGrouped = cluster.apps.length > 2; // "Mas de 2" -> 3 or more
+                                            const clusterKey = `${dayStr}-${cIdx}`;
+
+                                            if (isGrouped) {
+                                                const topOffset = cluster.start - (8 * 60);
+                                                const duration = Math.max((cluster.end - cluster.start), 60);
+                                                const isOpen = expandedClusterId === clusterKey;
+
+                                                return (
+                                                    <div
+                                                        key={clusterKey}
+                                                        className="absolute z-20"
+                                                        style={{ top: `${topOffset}px`, left: '1%', width: '98%', height: `${duration}px` }}
+                                                    >
+                                                        {/* Summary Card */}
+                                                        <div
+                                                            className="w-full h-full rounded bg-slate-800 text-white border border-slate-700 shadow-sm flex flex-col items-center justify-center cursor-pointer hover:bg-slate-700 transition-colors p-1"
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                setExpandedClusterId(isOpen ? null : clusterKey);
+                                                            }}
+                                                        >
+                                                            <div className="font-bold text-sm text-center leading-tight">
+                                                                {cluster.apps.length} Clases
+                                                            </div>
+                                                            <div className="text-[10px] opacity-80 text-center">
+                                                                {new Set(cluster.apps.map(a => a.vehicle_id)).size} Vehículos
+                                                            </div>
+                                                            {!isOpen && <div className="text-[9px] mt-1 opacity-50">Click para ver</div>}
+                                                        </div>
+
+                                                        {/* Dropdown / Details List */}
+                                                        {isOpen && (
+                                                            <div
+                                                                className="absolute top-full mt-1 left-0 min-w-[200px] w-full bg-white border shadow-xl rounded-md z-50 p-2 max-h-[300px] overflow-y-auto"
+                                                                onClick={(e) => e.stopPropagation()}
+                                                            >
+                                                                <div className="flex justify-between items-center mb-2 px-1 border-b pb-1">
+                                                                    <span className="text-xs font-bold text-slate-700">Detalle de Clases</span>
+                                                                    <div
+                                                                        className="p-1 hover:bg-slate-100 rounded cursor-pointer"
+                                                                        onClick={() => setExpandedClusterId(null)}
+                                                                    >
+                                                                        <XCircle className="w-4 h-4 text-slate-400" />
+                                                                    </div>
+                                                                </div>
+                                                                <div className="space-y-2">
+                                                                    {cluster.apps.map(app => {
+                                                                        const vColors = getVehicleColor(app.vehicle_id || 'default');
+                                                                        const appDur = app.class_type?.duration_minutes || 60;
+
+                                                                        // Custom styling for status
+                                                                        let statusStyle = vColors;
+                                                                        if (app.status === 'completed') statusStyle = { bg: 'bg-green-50', border: 'border-green-200', text: 'text-green-800' };
+                                                                        if (app.status === 'cancelled') statusStyle = { bg: 'bg-red-50', border: 'border-red-200', text: 'text-red-800' };
+
+                                                                        return (
+                                                                            <div
+                                                                                key={app.id}
+                                                                                className={cn(
+                                                                                    "p-2 rounded border text-xs cursor-pointer hover:shadow-md transition-all",
+                                                                                    statusStyle.bg, statusStyle.border, statusStyle.text,
+                                                                                    app.status === 'cancelled' && "line-through opacity-70"
+                                                                                )}
+                                                                                onClick={() => handleAppointmentClick(app)}
+                                                                            >
+                                                                                <div className="flex justify-between items-start">
+                                                                                    <div className="font-bold">{app.student?.first_name} {app.student?.last_name}</div>
+                                                                                    {app.status === 'completed' && <CheckCircle className="w-3 h-3 text-green-600" />}
+                                                                                    {app.status === 'cancelled' && <XCircle className="w-3 h-3 text-red-600" />}
+                                                                                </div>
+                                                                                <div className="flex justify-between mt-1 text-[10px] opacity-80">
+                                                                                    <span>{app.start_time.slice(0, 5)} - {app.vehicle?.brand}</span>
+                                                                                </div>
+                                                                                {app.class_number && app.package?.total_credits && (
+                                                                                    <div className="mt-1 text-[10px] font-semibold bg-white/40 w-fit px-1 rounded">
+                                                                                        Clase {app.class_number} de {app.package.total_credits}
+                                                                                    </div>
+                                                                                )}
+                                                                            </div>
+                                                                        );
+                                                                    })}
+                                                                </div>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                );
                                             }
 
-                                            const appStartMinute = parseInt(app.start_time.split(':')[1]);
-                                            const appDuration = app.class_type?.duration_minutes || 60;
+                                            // Render Individual items (Standard column logic for this cluster)
+                                            // Mini-layout engine for non-grouped items
+                                            const subCols: any[][] = [];
+                                            cluster.apps.forEach(app => {
+                                                const appStart = parseInt(app.start_time.split(':')[0]) * 60 + parseInt(app.start_time.split(':')[1]);
+                                                const duration = app.class_type?.duration_minutes || 60;
+                                                const appEnd = appStart + duration;
 
-                                            return (
-                                                <ContextMenu key={app.id}>
-                                                    <ContextMenuTrigger>
-                                                        <div
-                                                            className={cn(
-                                                                "absolute rounded p-1 text-xs border shadow-sm cursor-pointer hover:shadow-md transition-shadow z-20",
-                                                                finalColors.bg,
-                                                                finalColors.border,
-                                                                finalColors.text,
-                                                                app.status === 'cancelled' && "line-through opacity-60"
-                                                            )}
-                                                            style={{
-                                                                top: `${(appStartMinute / 60) * 60}px`,
-                                                                left: `${index * widthPercent}%`,
-                                                                width: `${widthPercent - 2}%`,
-                                                                height: `${appDuration}px`
-                                                            }}
-                                                            onClick={(e) => {
-                                                                e.stopPropagation(); // Prevent slot click
-                                                                handleAppointmentClick(app);
-                                                            }}
-                                                        >
-                                                            <div className="font-semibold truncate text-[10px]">
-                                                                {app.student?.first_name} {app.student?.last_name}
-                                                            </div>
-                                                            {app.class_number && app.package?.total_credits && (
-                                                                <div className="text-[9px] opacity-90 font-medium">
-                                                                    {app.class_type?.duration_minutes >= 90
-                                                                        ? `Clase ${app.class_number} y ${app.class_number + 1}`
-                                                                        : `Clase ${app.class_number}`} de {app.package.total_credits}
+                                                let placed = false;
+                                                for (let i = 0; i < subCols.length; i++) {
+                                                    const last = subCols[i][subCols[i].length - 1];
+                                                    const lastEnd = (parseInt(last.start_time.split(':')[0]) * 60 + parseInt(last.start_time.split(':')[1])) + (last.class_type?.duration_minutes || 60);
+                                                    if (appStart >= lastEnd) {
+                                                        subCols[i].push(app);
+                                                        placed = true;
+                                                        break;
+                                                    }
+                                                }
+                                                if (!placed) subCols.push([app]);
+                                            });
+
+                                            return cluster.apps.map(app => {
+                                                const appStart = parseInt(app.start_time.split(':')[0]) * 60 + parseInt(app.start_time.split(':')[1]);
+                                                const topOffset = appStart - (8 * 60);
+                                                const duration = app.class_type?.duration_minutes || 60;
+                                                const vehicleColors = getVehicleColor(app.vehicle_id || 'default');
+
+                                                // Custom styling for status on individual cards
+                                                let statusStyle = vehicleColors;
+                                                if (app.status === 'completed') statusStyle = { bg: 'bg-green-50', border: 'border-green-200', text: 'text-green-800' };
+                                                if (app.status === 'cancelled') statusStyle = { bg: 'bg-red-50', border: 'border-red-200', text: 'text-red-800' };
+
+                                                let colIndex = 0;
+                                                subCols.forEach((col, i) => { if (col.includes(app)) colIndex = i; });
+                                                const width = 96 / subCols.length;
+                                                const left = (width * colIndex) + 2;
+
+                                                return (
+                                                    <ContextMenu key={app.id}>
+                                                        <ContextMenuTrigger>
+                                                            <div
+                                                                className={cn(
+                                                                    "absolute rounded p-1 text-xs border shadow-sm cursor-pointer transition-all duration-200 z-20 hover:z-30 hover:brightness-95 flex flex-col justify-between overflow-hidden",
+                                                                    statusStyle.bg,
+                                                                    statusStyle.border,
+                                                                    statusStyle.text,
+                                                                    app.status === 'cancelled' && "line-through opacity-60"
+                                                                )}
+                                                                style={{
+                                                                    top: `${topOffset}px`,
+                                                                    left: `${left}%`,
+                                                                    width: `${width}%`,
+                                                                    height: `${duration}px`,
+                                                                }}
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    handleAppointmentClick(app);
+                                                                }}
+                                                            >
+                                                                <div>
+                                                                    <div className="font-semibold truncate text-[10px] leading-tight">
+                                                                        {app.student?.first_name} {app.student?.last_name}
+                                                                    </div>
+                                                                    <div className="truncate opacity-75 text-[9px]">
+                                                                        {app.start_time.slice(0, 5)} - {app.vehicle?.brand}
+                                                                    </div>
                                                                 </div>
-                                                            )}
-                                                            <div className="truncate opacity-75 text-[9px]">
-                                                                {app.start_time.slice(0, 5)} - {app.vehicle?.brand}
+                                                                {app.class_number && app.package?.total_credits && (
+                                                                    <div className="text-[9px] font-bold opacity-90 mt-auto bg-white/20 px-1 rounded w-fit">
+                                                                        {app.class_number}/{app.package.total_credits}
+                                                                    </div>
+                                                                )}
                                                             </div>
-                                                        </div>
-                                                    </ContextMenuTrigger>
-                                                    <ContextMenuContent>
-                                                        <ContextMenuItem onClick={() => handleAppointmentClick(app)}>
-                                                            <Pencil className="mr-2 h-4 w-4" />
-                                                            Editar / Ver Detalles
-                                                        </ContextMenuItem>
-                                                        <ContextMenuSeparator />
-                                                        <ContextMenuItem
-                                                            disabled={app.status === 'completed'}
-                                                            onClick={async () => {
-                                                                await updateAppointmentStatus(app.id, 'completed');
-                                                                router.refresh();
-                                                            }}
-                                                        >
-                                                            <CheckCircle className="mr-2 h-4 w-4 text-green-600" />
-                                                            Marcar Completado
-                                                        </ContextMenuItem>
-                                                        {app.status !== 'scheduled' && (
+                                                        </ContextMenuTrigger>
+                                                        <ContextMenuContent>
+                                                            <ContextMenuItem onClick={() => handleAppointmentClick(app)}>
+                                                                <Pencil className="mr-2 h-4 w-4" />
+                                                                Editar
+                                                            </ContextMenuItem>
+                                                            <ContextMenuSeparator />
                                                             <ContextMenuItem
+                                                                disabled={app.status === 'completed'}
                                                                 onClick={async () => {
-                                                                    await updateAppointmentStatus(app.id, 'scheduled');
+                                                                    await updateAppointmentStatus(app.id, 'completed');
                                                                     router.refresh();
                                                                 }}
                                                             >
-                                                                <Clock className="mr-2 h-4 w-4 text-blue-600" />
-                                                                Restaurar a Agendado
+                                                                <CheckCircle className="mr-2 h-4 w-4 text-green-600" />
+                                                                Marcar Completado
                                                             </ContextMenuItem>
-                                                        )}
-                                                        <ContextMenuItem
-                                                            disabled={app.status === 'cancelled'}
-                                                            onClick={async () => {
-                                                                if (confirm('¿Cancelar esta clase?')) {
-                                                                    await updateAppointmentStatus(app.id, 'cancelled');
-                                                                    router.refresh();
-                                                                }
-                                                            }}
-                                                        >
-                                                            <XCircle className="mr-2 h-4 w-4 text-red-600" />
-                                                            Cancelar
-                                                        </ContextMenuItem>
-                                                    </ContextMenuContent>
-                                                </ContextMenu>
-                                            );
-                                        })}
-                                    </div>
-                                );
-                            })}
-                        </div>
-                    ))}
+                                                            <ContextMenuItem
+                                                                disabled={app.status === 'cancelled'}
+                                                                onClick={async () => {
+                                                                    if (confirm('¿Cancelar esta clase?')) {
+                                                                        await updateAppointmentStatus(app.id, 'cancelled');
+                                                                        router.refresh();
+                                                                    }
+                                                                }}
+                                                            >
+                                                                <XCircle className="mr-2 h-4 w-4 text-red-600" />
+                                                                Cancelar
+                                                            </ContextMenuItem>
+                                                        </ContextMenuContent>
+                                                    </ContextMenu>
+                                                );
+                                            });
+                                        });
+
+                                    })()}
+
+                                    {/* Completed/Cancelled Apps (Simplified Render) */}
+                                    {otherApps.map(app => {
+                                        const appStart = parseInt(app.start_time.split(':')[0]) * 60 + parseInt(app.start_time.split(':')[1]);
+                                        const topOffset = appStart - (8 * 60);
+                                        const duration = app.class_type?.duration_minutes || 60;
+
+                                        let finalColors = { bg: 'bg-gray-100', border: 'border-gray-200', text: 'text-gray-500' };
+                                        if (app.status === 'completed') finalColors = { bg: 'bg-green-50', border: 'border-green-200', text: 'text-green-800' };
+                                        if (app.status === 'cancelled') finalColors = { bg: 'bg-red-50', border: 'border-red-100', text: 'text-red-300' };
+
+                                        return (
+                                            <div
+                                                key={app.id}
+                                                className={cn(
+                                                    "absolute rounded p-1 text-[10px] border opacity-60 z-10",
+                                                    finalColors.bg,
+                                                    finalColors.border,
+                                                    finalColors.text,
+                                                    app.status === 'cancelled' && "line-through"
+                                                )}
+                                                style={{
+                                                    top: `${topOffset}px`,
+                                                    left: '2%',
+                                                    width: '96%',
+                                                    height: `${duration}px`,
+                                                }}
+                                            >
+                                                {app.student?.first_name} - {app.status}
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            );
+                        })}
+                    </div>
                 </div>
             </div>
 
