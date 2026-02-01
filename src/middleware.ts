@@ -63,25 +63,41 @@ export async function middleware(request: NextRequest) {
         const url = request.nextUrl.clone();
         const path = request.nextUrl.pathname;
 
+        // SCENARIO 4: Super Admin
+        if (role === 'super_admin') {
+            // Super Admin can access /admin and /dashboard (for impersonation later)
+            // But main landing is /admin
+            if (path === '/login' || path === '/') {
+                url.pathname = '/admin'
+                return NextResponse.redirect(url)
+            }
+        }
+
         // SCENARIO 1: Student trying to access Dashboard or Login
         // Note: Students live at /student
         if (role === 'student') {
-            if (path.startsWith('/dashboard') || path === '/login' || path === '/') {
+            if (path.startsWith('/dashboard') || path.startsWith('/admin') || path === '/login' || path === '/') {
                 url.pathname = '/student'
                 return NextResponse.redirect(url)
             }
         }
 
-        // SCENARIO 2: Instructor trying to access Dashboard (Should go to /instructor)
+        // SCENARIO 2: Instructor
         if (role === 'instructor') {
-            if (path.startsWith('/dashboard') || path === '/login' || path === '/') {
+            if (path.startsWith('/dashboard') || path.startsWith('/admin') || path === '/login' || path === '/') {
                 url.pathname = '/instructor'
                 return NextResponse.redirect(url)
             }
         }
 
-        // SCENARIO 3: Admin/Staff trying to access Student/Instructor areas or Login
+        // SCENARIO 3: Admin/Staff (Regular Tenant)
         if (['admin', 'director', 'owner', 'secretary'].includes(role)) {
+            // Block access to /admin
+            if (path.startsWith('/admin')) {
+                url.pathname = '/dashboard'
+                return NextResponse.redirect(url)
+            }
+
             if (path === '/login' || path === '/') {
                 url.pathname = '/dashboard'
                 return NextResponse.redirect(url)

@@ -26,7 +26,7 @@ export function StudentBalanceCard({ balance }: StudentBalanceCardProps) {
                     ${balance.balance.toLocaleString()}
                 </div>
                 <p className="text-xs text-muted-foreground mt-2">
-                    Deuda Total: ${balance.total_debt?.toLocaleString() || 0}
+                    Costo Total: ${balance.total_debt?.toLocaleString() || 0}
                     <br />
                     Pagado: ${balance.total_paid?.toLocaleString() || 0}
                 </p>

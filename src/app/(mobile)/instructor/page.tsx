@@ -113,7 +113,7 @@ export default function InstructorHomePage() {
                                 <div className="flex justify-between items-center">
                                     <div className="flex items-center gap-2 font-bold text-lg">
                                         <Clock className="h-4 w-4 text-muted-foreground" />
-                                        {cls.start_time.slice(0, 5)}
+                                        {cls.start_time.slice(0, 5)} - {cls.end_time.slice(0, 5)}
                                     </div>
                                     <Badge variant={cls.status === 'completed' ? 'secondary' : 'default'}>
                                         {cls.status === 'completed' ? 'Completada' : 'Pendiente'}

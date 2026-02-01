@@ -50,7 +50,10 @@ export function CreateStudentDialog() {
             <DialogTrigger asChild>
                 <Button>Nuevo Estudiante</Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-[500px]">
+            <DialogContent
+                className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto"
+                onInteractOutside={(e) => e.preventDefault()}
+            >
                 <form onSubmit={handleSubmit}>
                     <DialogHeader>
                         <DialogTitle>Nuevo Estudiante</DialogTitle>
@@ -162,6 +165,33 @@ export function CreateStudentDialog() {
                                     placeholder="Calle, Número, Localidad"
                                     disabled={loading}
                                 />
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <Label htmlFor="date_of_birth">Fecha de Nacimiento</Label>
+                                <Input
+                                    id="date_of_birth"
+                                    name="date_of_birth"
+                                    type="date"
+                                    disabled={loading}
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="referral_source">¿Cómo nos conoció?</Label>
+                                <select
+                                    id="referral_source"
+                                    name="referral_source"
+                                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                                    disabled={loading}
+                                >
+                                    <option value="">Seleccionar...</option>
+                                    <option value="Meta">Meta (Facebook/Instagram)</option>
+                                    <option value="Google Maps">Google Maps</option>
+                                    <option value="Conocidos">Conocidos</option>
+                                    <option value="Otro">Otro</option>
+                                </select>
                             </div>
                         </div>
 

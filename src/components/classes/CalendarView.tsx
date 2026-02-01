@@ -39,17 +39,17 @@ interface CalendarViewProps {
     userRole: string;
 }
 
-// Helper to generate consistent color for a vehicle
-function getVehicleColor(vehicleId: string): { bg: string; border: string; text: string } {
+// Helper to get soft pastel colors for backgrounds but strong borders
+function getVehicleColor(vehicleId: string): { bg: string; border: string; text: string; indicator: string } {
     const colors = [
-        { bg: 'bg-blue-100', border: 'border-blue-300', text: 'text-blue-900' },
-        { bg: 'bg-purple-100', border: 'border-purple-300', text: 'text-purple-900' },
-        { bg: 'bg-pink-100', border: 'border-pink-300', text: 'text-pink-900' },
-        { bg: 'bg-orange-100', border: 'border-orange-300', text: 'text-orange-900' },
-        { bg: 'bg-teal-100', border: 'border-teal-300', text: 'text-teal-900' },
-        { bg: 'bg-cyan-100', border: 'border-cyan-300', text: 'text-cyan-900' },
-        { bg: 'bg-indigo-100', border: 'border-indigo-300', text: 'text-indigo-900' },
-        { bg: 'bg-emerald-100', border: 'border-emerald-300', text: 'text-emerald-900' },
+        { bg: 'bg-blue-50', border: 'border-blue-200', text: 'text-blue-700', indicator: 'bg-blue-500' },
+        { bg: 'bg-purple-50', border: 'border-purple-200', text: 'text-purple-700', indicator: 'bg-purple-500' },
+        { bg: 'bg-pink-50', border: 'border-pink-200', text: 'text-pink-700', indicator: 'bg-pink-500' },
+        { bg: 'bg-orange-50', border: 'border-orange-200', text: 'text-orange-700', indicator: 'bg-orange-500' },
+        { bg: 'bg-teal-50', border: 'border-teal-200', text: 'text-teal-700', indicator: 'bg-teal-500' },
+        { bg: 'bg-cyan-50', border: 'border-cyan-200', text: 'text-cyan-700', indicator: 'bg-cyan-500' },
+        { bg: 'bg-indigo-50', border: 'border-indigo-200', text: 'text-indigo-700', indicator: 'bg-indigo-500' },
+        { bg: 'bg-emerald-50', border: 'border-emerald-200', text: 'text-emerald-700', indicator: 'bg-emerald-500' },
     ];
 
     // Simple hash function
@@ -70,6 +70,13 @@ export function CalendarView({ appointments, currentDate, view, resources, filte
     const [selectedTime, setSelectedTime] = useState<string>('');
     const [selectedAppointment, setSelectedAppointment] = useState<any | null>(null);
     const [expandedClusterId, setExpandedClusterId] = useState<string | null>(null);
+
+    // Current time indicator logic
+    const [now, setNow] = useState(new Date());
+    React.useEffect(() => {
+        const interval = setInterval(() => setNow(new Date()), 60000); // Update every minute
+        return () => clearInterval(interval);
+    }, []);
 
     const handlePrev = () => {
         const newDate = subWeeks(currentDate, 1);
@@ -98,7 +105,12 @@ export function CalendarView({ appointments, currentDate, view, resources, filte
 
     // Generate week days
     const monday = startOfWeek(currentDate, { weekStartsOn: 1 });
-    const weekDays = Array.from({ length: 7 }).map((_, i) => addDays(monday, i)); // Mon-Sun
+    const weekDays = useMemo(() => {
+        if (view === 'day') {
+            return [currentDate];
+        }
+        return Array.from({ length: 7 }).map((_, i) => addDays(monday, i)); // Mon-Sun
+    }, [currentDate, view, monday]);
 
     // Generate time slots (8:00 to 20:00)
     const timeSlots = Array.from({ length: 13 }).map((_, i) => 8 + i); // 8 AM to 8 PM
@@ -158,36 +170,36 @@ export function CalendarView({ appointments, currentDate, view, resources, filte
 
 
     return (
-        <div className="flex flex-col h-full border rounded-lg bg-card text-card-foreground shadow-sm overflow-hidden">
+        <div className="flex flex-col h-full border rounded-xl bg-white text-card-foreground shadow-sm overflow-hidden">
             {/* Header */}
-            <div className="flex items-center justify-between p-4 border-b">
+            <div className="flex items-center justify-between p-4 border-b border-gray-200">
                 <div className="flex items-center gap-2">
-                    <Button variant="outline" size="icon" onClick={handlePrev}>
-                        <ChevronLeft className="h-4 w-4" />
+                    <Button variant="ghost" size="icon" onClick={handlePrev} className="h-8 w-8 hover:bg-gray-100">
+                        <ChevronLeft className="h-4 w-4 text-gray-600" />
                     </Button>
-                    <Button variant="outline" size="icon" onClick={handleNext}>
-                        <ChevronRight className="h-4 w-4" />
-                    </Button>
-                    <span className="text-lg font-semibold capitalize ml-2">
+                    <span className="text-xl font-bold capitalize text-gray-800 ml-2 mr-2 min-w-[180px] text-center">
                         {format(currentDate, 'MMMM yyyy', { locale: es })}
                     </span>
+                    <Button variant="ghost" size="icon" onClick={handleNext} className="h-8 w-8 hover:bg-gray-100">
+                        <ChevronRight className="h-4 w-4 text-gray-600" />
+                    </Button>
                 </div>
                 <div className="flex items-center gap-2">
                     <Button
                         variant={showAvailability ? "default" : "outline"}
                         size="sm"
                         onClick={() => setShowAvailability(!showAvailability)}
-                        className={showAvailability ? "bg-green-600 hover:bg-green-700 text-white" : ""}
+                        className={cn("text-xs", showAvailability ? "bg-emerald-600 hover:bg-emerald-700 text-white" : "text-gray-600")}
                     >
-                        {showAvailability ? "Ocultar Disponibilidad" : "Ver Disponibilidad"}
+                        {showAvailability ? "Ocultar Disp." : "Ver Disponibilidad"}
                     </Button>
-                    <Button variant="outline" onClick={handleToday}>
+                    <Button variant="outline" size="sm" onClick={handleToday} className="text-xs text-gray-600">
                         Hoy
                     </Button>
                     <Select defaultValue={view} onValueChange={(v) => {
                         router.push(`/dashboard/classes?date=${format(currentDate, 'yyyy-MM-dd')}&view=${v}`);
                     }}>
-                        <SelectTrigger className="w-[120px]">
+                        <SelectTrigger className="w-[100px] h-8 text-xs">
                             <SelectValue placeholder="Vista" />
                         </SelectTrigger>
                         <SelectContent>
@@ -199,22 +211,25 @@ export function CalendarView({ appointments, currentDate, view, resources, filte
             </div>
 
             {/* Calendar Grid (Column-based for better overlap handling) */}
-            <div className="flex-1 overflow-auto">
-                <div className="min-w-[800px]">
-                    <div className="grid grid-cols-[60px_repeat(7,1fr)]">
+            <div className="flex-1 overflow-auto bg-white relative">
+                <div className={cn("min-w-[800px]", view === 'day' && "min-w-full")}>
+                    <div className={cn(
+                        "grid",
+                        view === 'day' ? "grid-cols-[60px_1fr]" : "grid-cols-[60px_repeat(7,1fr)]"
+                    )}>
                         {/* Header Row (Days) */}
-                        <div className="p-2 border-r text-xs text-muted-foreground text-center content-center bg-muted/20 sticky top-0 z-30">Hora</div>
+                        <div className="p-2 border-r border-gray-200 text-[10px] font-medium text-gray-400 text-center content-center bg-white sticky top-0 z-30 shadow-sm">GMT-3</div>
                         {weekDays.map((day) => (
                             <div key={day.toString()} className={cn(
-                                "p-2 text-center border-r last:border-r-0 bg-muted/20 sticky top-0 z-30",
-                                isSameDay(day, new Date()) && "bg-primary/10"
+                                "py-3 px-2 text-center border-r border-gray-200 bg-white sticky top-0 z-30 shadow-sm flex flex-col items-center justify-center gap-1",
+                                isSameDay(day, new Date()) && "bg-blue-50/30"
                             )}>
-                                <div className="text-xs text-muted-foreground capitalize">
+                                <div className="text-[11px] font-medium text-gray-500 uppercase tracking-wide">
                                     {format(day, 'EEE', { locale: es })}
                                 </div>
                                 <div className={cn(
-                                    "text-sm font-bold",
-                                    isSameDay(day, new Date()) && "text-primary"
+                                    "text-lg font-bold w-8 h-8 flex items-center justify-center rounded-full transition-colors",
+                                    isSameDay(day, new Date()) ? "bg-blue-600 text-white shadow-md shadow-blue-200" : "text-gray-800"
                                 )}>
                                     {format(day, 'd')}
                                 </div>
@@ -222,10 +237,10 @@ export function CalendarView({ appointments, currentDate, view, resources, filte
                         ))}
 
                         {/* Time Labels Column */}
-                        <div className="bg-background sticky left-0 z-20 border-r border-b-0">
+                        <div className="bg-white sticky left-0 z-20 border-r border-gray-200">
                             {timeSlots.map((hour) => (
-                                <div key={hour} className="h-[60px] border-b text-xs text-muted-foreground text-right pr-2 pt-1 relative">
-                                    <span className="-top-2.5 absolute right-2">{`${hour}:00`}</span>
+                                <div key={hour} className="h-[60px] border-b border-gray-200 text-[10px] font-medium text-gray-400 text-right pr-3 pt-2 relative">
+                                    <span className="-top-2 absolute right-3">{`${hour}:00`}</span>
                                 </div>
                             ))}
                         </div>
@@ -233,17 +248,20 @@ export function CalendarView({ appointments, currentDate, view, resources, filte
                         {/* Day Columns */}
                         {weekDays.map((day) => {
                             const dayStr = format(day, 'yyyy-MM-dd');
+                            const isToday = isSameDay(day, now);
+                            let currentTimeTop = -1;
+
+                            if (isToday) {
+                                const hours = now.getHours();
+                                const minutes = now.getMinutes();
+                                if (hours >= 8 && hours < 21) {
+                                    currentTimeTop = ((hours - 8) * 60) + minutes;
+                                }
+                            }
 
                             // Filter appointments for this day
-                            // We now include 'completed' and 'cancelled' in the main flow so they don't break the layout structure.
-                            // However, we might want to hide cancelled or simple cross them out. 
-                            // The user specifically asked for 'completed' to remain in the structure.
-                            // Let's include everything except maybe rejected/deleted if those existed. 
                             const dayApps = appointments.filter(app =>
                                 app.scheduled_date === dayStr
-                                // We include ALL statuses so the grid structure remains consistent.
-                                // If you want to hide cancelled, uncomment the next line:
-                                // && app.status !== 'cancelled'
                             ).sort((a, b) => { // Sort by start time, then duration
                                 const startA = parseInt(a.start_time.split(':')[0]) * 60 + parseInt(a.start_time.split(':')[1]);
                                 const startB = parseInt(b.start_time.split(':')[0]) * 60 + parseInt(b.start_time.split(':')[1]);
@@ -251,19 +269,29 @@ export function CalendarView({ appointments, currentDate, view, resources, filte
                                 return (b.class_type?.duration_minutes || 60) - (a.class_type?.duration_minutes || 60);
                             });
 
-                            // otherApps is now likely empty or reserved for really special statuses if any
-                            const otherApps: any[] = [];
+                            const otherApps: any[] = []; // Reserved for filtered out apps if needed
 
                             return (
                                 <div key={day.toString()} className={cn(
-                                    "border-r last:border-r-0 relative min-h-[780px]", // 13 slots * 60px
-                                    isSameDay(day, new Date()) && "bg-primary/5"
+                                    "border-r border-gray-200 relative min-h-[780px]", // 13 slots * 60px
+                                    isSameDay(day, new Date()) ? "bg-blue-50/10" : "bg-white"
                                 )}>
+                                    {/* Current Time Indicator Line */}
+                                    {isToday && currentTimeTop >= 0 && (
+                                        <div
+                                            className="absolute w-full z-40 pointer-events-none flex items-center"
+                                            style={{ top: `${currentTimeTop}px` }}
+                                        >
+                                            <div className="w-2 h-2 rounded-full bg-red-500 -ml-1"></div>
+                                            <div className="h-[2px] bg-red-500 w-full shadow-[0_0_4px_rgba(239,68,68,0.4)]"></div>
+                                        </div>
+                                    )}
+
                                     {/* Background Slots (Clickable) */}
                                     {timeSlots.map((hour) => (
                                         <div
                                             key={hour}
-                                            className="h-[60px] border-b hover:bg-muted/5 transition-colors"
+                                            className="h-[60px] border-b border-gray-200 transition-colors hover:bg-gray-50/50"
                                             onClick={() => handleSlotClick(dayStr, hour)}
                                         />
                                     ))}
@@ -279,7 +307,7 @@ export function CalendarView({ appointments, currentDate, view, resources, filte
                                             return (
                                                 <div
                                                     key={`free-${hour}-${idx}`}
-                                                    className="absolute bg-green-200/50 border border-green-300 text-green-800 rounded p-1 text-[10px] flex items-center justify-center z-10 cursor-pointer pointer-events-auto"
+                                                    className="absolute bg-emerald-50/80 border border-emerald-100 text-emerald-600 rounded-md p-1 text-[10px] font-medium flex items-center justify-center z-10 cursor-pointer pointer-events-auto hover:bg-emerald-100 transition-colors"
                                                     style={{
                                                         top: `${topOffset}px`,
                                                         left: '2%',
@@ -291,7 +319,7 @@ export function CalendarView({ appointments, currentDate, view, resources, filte
                                                         handleSlotClick(dayStr, slot.start.getHours());
                                                     }}
                                                 >
-                                                    Disponible
+                                                    <Plus className="w-3 h-3 mr-1" /> Libre
                                                 </div>
                                             )
                                         });
@@ -328,12 +356,12 @@ export function CalendarView({ appointments, currentDate, view, resources, filte
                                                 return (
                                                     <div
                                                         key={clusterKey}
-                                                        className="absolute z-20"
+                                                        className={cn("absolute", isOpen ? "z-50" : "z-20")}
                                                         style={{ top: `${topOffset}px`, left: '1%', width: '98%', height: `${duration}px` }}
                                                     >
                                                         {/* Summary Card */}
                                                         <div
-                                                            className="w-full h-full rounded bg-slate-800 text-white border border-slate-700 shadow-sm flex flex-col items-center justify-center cursor-pointer hover:bg-slate-700 transition-colors p-1"
+                                                            className="w-full h-full rounded-md bg-slate-800 text-white border border-slate-700 shadow-md flex flex-col items-center justify-center cursor-pointer hover:bg-slate-700 transition-all p-1"
                                                             onClick={(e) => {
                                                                 e.stopPropagation();
                                                                 setExpandedClusterId(isOpen ? null : clusterKey);
@@ -342,7 +370,7 @@ export function CalendarView({ appointments, currentDate, view, resources, filte
                                                             <div className="font-bold text-sm text-center leading-tight">
                                                                 {cluster.apps.length} Clases
                                                             </div>
-                                                            <div className="text-[10px] opacity-80 text-center">
+                                                            <div className="text-[10px] opacity-70 text-center font-light">
                                                                 {new Set(cluster.apps.map(a => a.vehicle_id)).size} Vehículos
                                                             </div>
                                                             {!isOpen && <div className="text-[9px] mt-1 opacity-50">Click para ver</div>}
@@ -351,16 +379,16 @@ export function CalendarView({ appointments, currentDate, view, resources, filte
                                                         {/* Dropdown / Details List */}
                                                         {isOpen && (
                                                             <div
-                                                                className="absolute top-full mt-1 left-0 min-w-[200px] w-full bg-white border shadow-xl rounded-md z-50 p-2 max-h-[300px] overflow-y-auto"
+                                                                className="absolute top-full mt-2 left-0 min-w-[220px] w-full bg-white border border-gray-200 shadow-xl rounded-lg z-50 p-2 max-h-[300px] overflow-y-auto ring-1 ring-black/5"
                                                                 onClick={(e) => e.stopPropagation()}
                                                             >
-                                                                <div className="flex justify-between items-center mb-2 px-1 border-b pb-1">
-                                                                    <span className="text-xs font-bold text-slate-700">Detalle de Clases</span>
+                                                                <div className="flex justify-between items-center mb-2 px-1 border-b pb-2">
+                                                                    <span className="text-xs font-bold text-gray-700">Detalle de Clases</span>
                                                                     <div
-                                                                        className="p-1 hover:bg-slate-100 rounded cursor-pointer"
+                                                                        className="p-1 hover:bg-gray-100 rounded-full cursor-pointer transition-colors"
                                                                         onClick={() => setExpandedClusterId(null)}
                                                                     >
-                                                                        <XCircle className="w-4 h-4 text-slate-400" />
+                                                                        <XCircle className="w-4 h-4 text-gray-400" />
                                                                     </div>
                                                                 </div>
                                                                 <div className="space-y-2">
@@ -370,19 +398,21 @@ export function CalendarView({ appointments, currentDate, view, resources, filte
 
                                                                         // Custom styling for status
                                                                         let statusStyle = vColors;
-                                                                        if (app.status === 'completed') statusStyle = { bg: 'bg-green-50', border: 'border-green-200', text: 'text-green-800' };
-                                                                        if (app.status === 'cancelled') statusStyle = { bg: 'bg-red-50', border: 'border-red-200', text: 'text-red-800' };
+                                                                        // Force pastel/light colors regardless
+                                                                        if (app.status === 'completed') statusStyle = { bg: 'bg-green-50', border: 'border-green-200', text: 'text-green-800', indicator: 'bg-green-500' };
+                                                                        if (app.status === 'cancelled') statusStyle = { bg: 'bg-red-50', border: 'border-red-200', text: 'text-red-800', indicator: 'bg-red-500' };
 
                                                                         return (
                                                                             <div
                                                                                 key={app.id}
                                                                                 className={cn(
-                                                                                    "p-2 rounded border text-xs cursor-pointer hover:shadow-md transition-all",
+                                                                                    "p-2 rounded-md border text-xs cursor-pointer hover:shadow-md transition-all relative overflow-hidden pl-3",
                                                                                     statusStyle.bg, statusStyle.border, statusStyle.text,
-                                                                                    app.status === 'cancelled' && "line-through opacity-70"
+                                                                                    app.status === 'cancelled' && "opacity-70"
                                                                                 )}
                                                                                 onClick={() => handleAppointmentClick(app)}
                                                                             >
+                                                                                <div className={cn("absolute left-0 top-0 bottom-0 w-1", statusStyle.indicator)}></div>
                                                                                 <div className="flex justify-between items-start">
                                                                                     <div className="font-bold">{app.student?.first_name} {app.student?.last_name}</div>
                                                                                     {app.status === 'completed' && <CheckCircle className="w-3 h-3 text-green-600" />}
@@ -391,11 +421,6 @@ export function CalendarView({ appointments, currentDate, view, resources, filte
                                                                                 <div className="flex justify-between mt-1 text-[10px] opacity-80">
                                                                                     <span>{app.start_time.slice(0, 5)} - {app.vehicle?.brand}</span>
                                                                                 </div>
-                                                                                {app.class_number && app.package?.total_credits && (
-                                                                                    <div className="mt-1 text-[10px] font-semibold bg-white/40 w-fit px-1 rounded">
-                                                                                        Clase {app.class_number} de {app.package.total_credits}
-                                                                                    </div>
-                                                                                )}
                                                                             </div>
                                                                         );
                                                                     })}
@@ -431,12 +456,20 @@ export function CalendarView({ appointments, currentDate, view, resources, filte
                                                 const appStart = parseInt(app.start_time.split(':')[0]) * 60 + parseInt(app.start_time.split(':')[1]);
                                                 const topOffset = appStart - (8 * 60);
                                                 const duration = app.class_type?.duration_minutes || 60;
+                                                const isSmall = duration < 50;
+
                                                 const vehicleColors = getVehicleColor(app.vehicle_id || 'default');
+
+                                                // Calculate End Time
+                                                const endMins = appStart + duration;
+                                                const endHrs = Math.floor(endMins / 60);
+                                                const endMinRem = endMins % 60;
+                                                const endTimeStr = `${endHrs.toString().padStart(2, '0')}:${endMinRem.toString().padStart(2, '0')}`;
 
                                                 // Custom styling for status on individual cards
                                                 let statusStyle = vehicleColors;
-                                                if (app.status === 'completed') statusStyle = { bg: 'bg-green-50', border: 'border-green-200', text: 'text-green-800' };
-                                                if (app.status === 'cancelled') statusStyle = { bg: 'bg-red-50', border: 'border-red-200', text: 'text-red-800' };
+                                                if (app.status === 'completed') statusStyle = { bg: 'bg-green-50', border: 'border-green-200', text: 'text-green-800', indicator: 'bg-green-500' };
+                                                if (app.status === 'cancelled') statusStyle = { bg: 'bg-red-50', border: 'border-red-200', text: 'text-red-800', indicator: 'bg-red-500' };
 
                                                 let colIndex = 0;
                                                 subCols.forEach((col, i) => { if (col.includes(app)) colIndex = i; });
@@ -448,11 +481,13 @@ export function CalendarView({ appointments, currentDate, view, resources, filte
                                                         <ContextMenuTrigger>
                                                             <div
                                                                 className={cn(
-                                                                    "absolute rounded p-1 text-xs border shadow-sm cursor-pointer transition-all duration-200 z-20 hover:z-30 hover:brightness-95 flex flex-col justify-between overflow-hidden",
+                                                                    "absolute rounded-md text-xs shadow-sm cursor-pointer transition-all duration-200 z-20 hover:z-30 hover:shadow-md flex flex-col justify-start overflow-hidden border",
+                                                                    // Reduce padding for small cards
+                                                                    isSmall ? "p-1 pl-2" : "p-1.5 pl-2.5",
                                                                     statusStyle.bg,
                                                                     statusStyle.border,
                                                                     statusStyle.text,
-                                                                    app.status === 'cancelled' && "line-through opacity-60"
+                                                                    app.status === 'cancelled' && "opacity-60 grayscale-[0.5]"
                                                                 )}
                                                                 style={{
                                                                     top: `${topOffset}px`,
@@ -465,25 +500,45 @@ export function CalendarView({ appointments, currentDate, view, resources, filte
                                                                     handleAppointmentClick(app);
                                                                 }}
                                                             >
-                                                                <div>
-                                                                    <div className="font-semibold truncate text-[10px] leading-tight">
-                                                                        {app.student?.first_name} {app.student?.last_name}
+                                                                <div className={cn("absolute left-0 top-0 bottom-0 w-1", statusStyle.indicator)}></div>
+
+                                                                <div className="w-full">
+                                                                    <div className={cn(
+                                                                        "font-bold truncate leading-tight w-full flex items-center justify-between gap-1",
+                                                                        isSmall ? "text-[10px] mb-0" : "text-[11px] mb-0.5"
+                                                                    )}>
+                                                                        <span className="truncate">
+                                                                            {app.student?.first_name} {app.student?.last_name}
+                                                                        </span>
                                                                     </div>
-                                                                    <div className="truncate opacity-75 text-[9px]">
-                                                                        {app.start_time.slice(0, 5)} - {app.vehicle?.brand}
+
+                                                                    <div className="truncate opacity-80 text-[10px] font-medium flex items-center gap-1">
+                                                                        <Clock className="w-3 h-3 inline opacity-70" /> {app.start_time.slice(0, 5)} - {endTimeStr}
                                                                     </div>
                                                                 </div>
-                                                                {app.class_number && app.package?.total_credits && (
-                                                                    <div className="text-[9px] font-bold opacity-90 mt-auto bg-white/20 px-1 rounded w-fit">
-                                                                        {app.class_number}/{app.package.total_credits}
+
+                                                                <div className="flex justify-between items-end mt-auto w-full">
+                                                                    <div className="text-[9px] opacity-75 truncate max-w-[70%]">
+                                                                        {app.vehicle?.brand}
                                                                     </div>
-                                                                )}
+                                                                    {app.class_number && app.package?.total_credits && (
+                                                                        <div className={cn(
+                                                                            "text-[9px] font-bold px-1.5 py-0.5 rounded-full flex-shrink-0",
+                                                                            "bg-white/40 shadow-sm"
+                                                                        )}>
+                                                                            {(app.class_type?.duration_minutes || 60) >= 85
+                                                                                ? `${app.class_number} y ${app.class_number + 1}`
+                                                                                : app.class_number}
+                                                                            /{app.package.total_credits}
+                                                                        </div>
+                                                                    )}
+                                                                </div>
                                                             </div>
                                                         </ContextMenuTrigger>
-                                                        <ContextMenuContent>
+                                                        <ContextMenuContent className="w-48">
                                                             <ContextMenuItem onClick={() => handleAppointmentClick(app)}>
                                                                 <Pencil className="mr-2 h-4 w-4" />
-                                                                Editar
+                                                                Editar clase
                                                             </ContextMenuItem>
                                                             <ContextMenuSeparator />
                                                             <ContextMenuItem
@@ -504,9 +559,10 @@ export function CalendarView({ appointments, currentDate, view, resources, filte
                                                                         router.refresh();
                                                                     }
                                                                 }}
+                                                                className="text-red-600 focus:text-red-700 focus:bg-red-50"
                                                             >
-                                                                <XCircle className="mr-2 h-4 w-4 text-red-600" />
-                                                                Cancelar
+                                                                <XCircle className="mr-2 h-4 w-4" />
+                                                                Cancelar clase
                                                             </ContextMenuItem>
                                                         </ContextMenuContent>
                                                     </ContextMenu>
@@ -552,7 +608,7 @@ export function CalendarView({ appointments, currentDate, view, resources, filte
                         })}
                     </div>
                 </div>
-            </div>
+            </div >
 
             <CreateClassDialog
                 resources={resources}
@@ -569,6 +625,6 @@ export function CalendarView({ appointments, currentDate, view, resources, filte
                 onOpenChange={setEditOpen}
                 userRole={userRole}
             />
-        </div>
+        </div >
     );
 }
