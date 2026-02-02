@@ -20,9 +20,10 @@ import { Trash2, Loader2 } from 'lucide-react';
 interface DeleteVehicleButtonProps {
     vehicleId: string;
     vehicleName: string;
+    trigger?: React.ReactNode;
 }
 
-export function DeleteVehicleButton({ vehicleId, vehicleName }: DeleteVehicleButtonProps) {
+export function DeleteVehicleButton({ vehicleId, vehicleName, trigger }: DeleteVehicleButtonProps) {
     const [open, setOpen] = useState(false);
     const [loading, setLoading] = useState(false);
     const router = useRouter();
@@ -45,9 +46,11 @@ export function DeleteVehicleButton({ vehicleId, vehicleName }: DeleteVehicleBut
     return (
         <AlertDialog open={open} onOpenChange={setOpen}>
             <AlertDialogTrigger asChild>
-                <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive">
-                    <Trash2 className="h-4 w-4" />
-                </Button>
+                {trigger || (
+                    <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive">
+                        <Trash2 className="h-4 w-4" />
+                    </Button>
+                )}
             </AlertDialogTrigger>
             <AlertDialogContent>
                 <AlertDialogHeader>

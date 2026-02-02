@@ -19,7 +19,11 @@ import { createStudent } from '@/app/(auth)/dashboard/students/actions';
 import { useRouter } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
 
-export function CreateStudentDialog() {
+interface CreateStudentDialogProps {
+    trigger?: React.ReactNode;
+}
+
+export function CreateStudentDialog({ trigger }: CreateStudentDialogProps) {
     const [open, setOpen] = useState(false);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -48,7 +52,7 @@ export function CreateStudentDialog() {
     return (
         <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
-                <Button>Nuevo Estudiante</Button>
+                {trigger || <Button>Nuevo Estudiante</Button>}
             </DialogTrigger>
             <DialogContent
                 className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto"

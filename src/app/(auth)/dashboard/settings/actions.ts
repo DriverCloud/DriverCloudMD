@@ -58,13 +58,58 @@ export async function getSettings() {
         }
     }
 
+    // Fetch Notification Settings
+    const { data: notifications, error: notifError } = await supabase
+        .from('notification_settings')
+        .select('*')
+        .eq('school_id', membership.school_id);
+
+    if (notifError) {
+        console.error('Error fetching notifications:', notifError);
+        // Don't fail the whole page, just return empty array
+    }
+
     return {
         success: true,
         data: {
             school,
-            settings
+            settings,
+            notifications: notifications || []
         }
     };
+}
+
+export async function updateNotificationSetting(type: string, enabled: boolean, days_threshold: number) {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (!user) return { success: false, error: 'No autenticado' };
+
+    const { data: membership } = await supabase
+        .from('memberships')
+        .select('school_id, owner_id')
+        .eq('user_id', user.id)
+        .single();
+
+    if (!membership) return { success: false, error: 'Sin membresía' };
+
+    const { error } = await supabase
+        .from('notification_settings')
+        .upsert({
+            school_id: membership.school_id,
+            type,
+            enabled,
+            days_threshold,
+            updated_at: new Date().toISOString()
+        }, { onConflict: 'school_id, type' });
+
+    if (error) {
+        console.error('Error updating notification setting:', error);
+        return { success: false, error: 'Error al guardar configuración' };
+    }
+
+    revalidatePath('/dashboard/settings');
+    return { success: true };
 }
 
 export async function updateSchoolProfile(formData: FormData) {

@@ -2,6 +2,7 @@ import { KPICards } from "@/components/dashboard/KPICards";
 import { ActivityChart } from "@/components/dashboard/ActivityChart";
 import { RecentActivity } from "@/components/dashboard/RecentActivity";
 import { MaintenanceAlerts } from "@/components/dashboard/MaintenanceAlerts";
+import { QuickActions } from "@/components/dashboard/QuickActions";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import {
@@ -13,10 +14,14 @@ import {
 } from "@/components/ui/dialog";
 import { PaymentModal } from "@/features/finance/components/PaymentModal";
 import { getUserRole } from "@/app/actions/auth";
+import { getResources } from "@/app/(auth)/dashboard/classes/actions";
 
 export default async function DashboardPage() {
     const role = await getUserRole();
     const isInstructor = role === 'instructor';
+
+    // Fetch resources for Quick Actions (avoid fetching if instructor)
+    const resources = !isInstructor ? await getResources() : { students: [], instructors: [], vehicles: [], classTypes: [] };
 
     return (
         <div className="space-y-6">
@@ -48,7 +53,8 @@ export default async function DashboardPage() {
 
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
                 {!isInstructor && <ActivityChart />}
-                <div className={isInstructor ? "col-span-7" : "col-span-3"}>
+                <div className={(isInstructor ? "col-span-7" : "col-span-3") + " space-y-4"}>
+                    {!isInstructor && <QuickActions resources={resources} />}
                     <RecentActivity />
                 </div>
             </div>

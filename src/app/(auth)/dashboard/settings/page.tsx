@@ -2,10 +2,11 @@ import { getSettings } from './actions';
 import { SchoolProfileForm } from '@/components/settings/SchoolProfileForm';
 import { BookingPoliciesForm } from '@/components/settings/BookingPoliciesForm';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Building, CalendarClock, Users, BookOpen, Tag } from 'lucide-react';
+import { Building, CalendarClock, Users, BookOpen, Tag, Bell } from 'lucide-react';
 import UsersPage from './users/page';
 import { ClassTypesSettings } from '@/components/settings/ClassTypesSettings';
 import { CoursePackagesSettings } from '@/components/settings/CoursePackagesSettings';
+import { NotificationSettings } from '@/components/settings/NotificationSettings';
 import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 
@@ -66,6 +67,10 @@ export default async function SettingsPage() {
                         <Tag className="h-4 w-4" />
                         Cursos
                     </TabsTrigger>
+                    <TabsTrigger value="notifications" className="gap-2">
+                        <Bell className="h-4 w-4" />
+                        Notificaciones
+                    </TabsTrigger>
                 </TabsList>
 
                 <TabsContent value="profile" className="mt-6">
@@ -86,6 +91,10 @@ export default async function SettingsPage() {
 
                 <TabsContent value="packages" className="mt-6">
                     <CoursePackagesSettings />
+                </TabsContent>
+
+                <TabsContent value="notifications" className="mt-6">
+                    <NotificationSettings settings={data.notifications || []} />
                 </TabsContent>
             </Tabs>
         </div>

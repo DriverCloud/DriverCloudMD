@@ -5,12 +5,14 @@ import { RegisterExpenseDialog } from '@/components/finance/RegisterExpenseDialo
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { format } from 'date-fns';
+import { format, startOfMonth, parse, addMonths } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Banknote, CreditCard, Building2, Smartphone, HelpCircle, TrendingUp, TrendingDown, Wallet, Users } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
+import { DateFilter } from '@/components/finance/DateFilter';
+import { FinanceChart } from '@/components/finance/FinanceChart';
 
 function getPaymentMethodBadge(method: string) {
     const methodConfig: Record<string, { label: string; icon: any; variant: 'default' | 'secondary' | 'outline' }> = {
@@ -33,15 +35,69 @@ function getPaymentMethodBadge(method: string) {
     );
 }
 
-export default async function FinancePage() {
-    const { data: payments } = await getPayments();
-    const { data: expenses } = await getExpenses();
+interface FinancePageProps {
+    searchParams: Promise<{ month?: string }>;
+}
+
+export default async function FinancePage({ searchParams }: FinancePageProps) {
+    const params = await searchParams;
+
+    // Parse Date Filter
+    const today = new Date();
+    let startDate = startOfMonth(today);
+    // Default to start of next month for the upper bound
+    let endDate = startOfMonth(addMonths(today, 1));
+
+    if (params.month) {
+        try {
+            const parsedDate = parse(params.month, 'yyyy-MM', new Date());
+            startDate = startOfMonth(parsedDate);
+            endDate = startOfMonth(addMonths(parsedDate, 1));
+        } catch (e) {
+            console.error("Invalid date format", e);
+        }
+    }
+
+    // Format for DB (YZ format might be needed depending on DB, but assuming standard ISO strings or YYYY-MM-DD)
+    const startStr = format(startDate, 'yyyy-MM-dd');
+    const endStr = format(endDate, 'yyyy-MM-dd');
+
+    const { data: payments } = await getPayments({ startDate: startStr, endDate: endStr });
+    const { data: expenses } = await getExpenses({ startDate: startStr, endDate: endStr });
     const resources = await getResources();
 
     // Calculate totals
     const totalRevenue = payments?.reduce((sum: number, p: any) => sum + Number(p.amount), 0) || 0;
     const totalExpenses = expenses?.reduce((sum: number, e: any) => sum + Number(e.amount), 0) || 0;
     const balance = totalRevenue - totalExpenses;
+
+    // Prepare Chart Data
+    // We need to map each day of the month to income/expense
+    // 1. Create a map of all days in the range
+    const daysMap = new Map<string, { income: number; expense: number }>();
+
+    // Fill map with 0s for all days in selected month (optional, but looks better)
+    // For simplicity, let's just map the data we have.
+
+    payments?.forEach((p: any) => {
+        const date = p.payment_date?.split('T')[0];
+        if (!date) return;
+        const current = daysMap.get(date) || { income: 0, expense: 0 };
+        daysMap.set(date, { ...current, income: current.income + Number(p.amount) });
+    });
+
+    expenses?.forEach((e: any) => {
+        const date = e.date?.split('T')[0]; // expenses usually have date field
+        if (!date) return;
+        const current = daysMap.get(date) || { income: 0, expense: 0 };
+        daysMap.set(date, { ...current, expense: current.expense + Number(e.amount) });
+    });
+
+    const chartData = Array.from(daysMap.entries()).map(([date, values]) => ({
+        date,
+        income: values.income,
+        expense: values.expense
+    }));
 
     return (
         <div className="flex flex-col gap-6 p-6 max-w-7xl mx-auto">
@@ -50,15 +106,19 @@ export default async function FinancePage() {
                     <h1 className="text-3xl font-bold tracking-tight">Finanzas</h1>
                     <p className="text-muted-foreground">Control de ingresos, gastos y balance general.</p>
                 </div>
-                <div className="flex gap-2">
-                    <Link href="/dashboard/finance/instructors">
-                        <Button variant="outline">
-                            <Users className="mr-2 h-4 w-4" />
-                            Sueldos Instructores
-                        </Button>
-                    </Link>
-                    <RegisterPaymentDialog students={resources.students || []} />
-                    <RegisterExpenseDialog />
+                <div className="flex flex-col md:flex-row gap-2 items-end md:items-center">
+                    <DateFilter />
+
+                    <div className="flex gap-2">
+                        <Link href="/dashboard/finance/instructors">
+                            <Button variant="outline">
+                                <Users className="mr-2 h-4 w-4" />
+                                Sueldos
+                            </Button>
+                        </Link>
+                        <RegisterPaymentDialog students={resources.students || []} />
+                        <RegisterExpenseDialog />
+                    </div>
                 </div>
             </div>
 
@@ -66,7 +126,7 @@ export default async function FinancePage() {
             <div className="grid gap-4 md:grid-cols-3">
                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Ingresos Totales</CardTitle>
+                        <CardTitle className="text-sm font-medium">Ingresos ({format(startDate, 'MMMM', { locale: es })})</CardTitle>
                         <TrendingUp className="h-4 w-4 text-emerald-600" />
                     </CardHeader>
                     <CardContent>
@@ -80,7 +140,7 @@ export default async function FinancePage() {
                 </Card>
                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Gastos Totales</CardTitle>
+                        <CardTitle className="text-sm font-medium">Gastos ({format(startDate, 'MMMM', { locale: es })})</CardTitle>
                         <TrendingDown className="h-4 w-4 text-rose-600" />
                     </CardHeader>
                     <CardContent>
@@ -94,7 +154,7 @@ export default async function FinancePage() {
                 </Card>
                 <Card className={cn("border-l-4", balance >= 0 ? "border-l-emerald-500" : "border-l-rose-500")}>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Balance General</CardTitle>
+                        <CardTitle className="text-sm font-medium">Balance Neto</CardTitle>
                         <Wallet className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
@@ -107,6 +167,16 @@ export default async function FinancePage() {
                     </CardContent>
                 </Card>
             </div>
+
+            {/* Chart Section */}
+            <Card>
+                <CardHeader>
+                    <CardTitle>Flujo de Caja - {format(startDate, 'MMMM yyyy', { locale: es })}</CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <FinanceChart data={chartData} />
+                </CardContent>
+            </Card>
 
             <Tabs defaultValue="income" className="w-full">
                 <TabsList className="grid w-full grid-cols-2 lg:w-[400px]">

@@ -73,17 +73,18 @@ export function KPICards({ userRole }: KPICardsProps) {
     if (isInstructor) {
         return (
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-                {/* Only show relevant or safe cards for instructor */}
                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                         <CardTitle className="text-sm font-medium">Clases Hoy</CardTitle>
-                        <Calendar className="h-4 w-4 text-muted-foreground" />
+                        <div className="h-8 w-8 rounded-full bg-violet-100 flex items-center justify-center">
+                            <Calendar className="h-4 w-4 text-violet-600" />
+                        </div>
                     </CardHeader>
                     <CardContent>
                         <div className="text-2xl font-bold">{stats.classesCompleted} / {stats.classesTotal}</div>
                         <div className="mt-2 h-2 w-full bg-secondary rounded-full overflow-hidden">
                             <div
-                                className="h-full bg-primary transition-all duration-500"
+                                className="h-full bg-violet-500 transition-all duration-500"
                                 style={{ width: `${stats.classesTotal > 0 ? (stats.classesCompleted / stats.classesTotal) * 100 : 0}%` }}
                             />
                         </div>
@@ -97,7 +98,9 @@ export function KPICards({ userRole }: KPICardsProps) {
                         <CardTitle className="text-sm font-medium">
                             Vehículos Disponibles
                         </CardTitle>
-                        <Car className="h-4 w-4 text-muted-foreground" />
+                        <div className="h-8 w-8 rounded-full bg-orange-100 flex items-center justify-center">
+                            <Car className="h-4 w-4 text-orange-600" />
+                        </div>
                     </CardHeader>
                     <CardContent>
                         <div className="text-2xl font-bold">{stats.availableVehicles} / {stats.vehicles}</div>
@@ -117,10 +120,12 @@ export function KPICards({ userRole }: KPICardsProps) {
                     <CardTitle className="text-sm font-medium">
                         Ingresos Totales
                     </CardTitle>
-                    <DollarSign className="h-4 w-4 text-muted-foreground" />
+                    <div className="h-8 w-8 rounded-full bg-emerald-100 flex items-center justify-center">
+                        <DollarSign className="h-4 w-4 text-emerald-600" />
+                    </div>
                 </CardHeader>
                 <CardContent>
-                    <div className="text-2xl font-bold">${stats.income.toLocaleString()}</div>
+                    <div className="text-2xl font-bold text-emerald-700">${stats.income.toLocaleString()}</div>
                     <p className="text-xs text-muted-foreground">
                         +20.1% respecto al mes pasado
                     </p>
@@ -131,10 +136,12 @@ export function KPICards({ userRole }: KPICardsProps) {
                     <CardTitle className="text-sm font-medium">
                         Estudiantes Activos
                     </CardTitle>
-                    <Users className="h-4 w-4 text-muted-foreground" />
+                    <div className="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center">
+                        <Users className="h-4 w-4 text-blue-600" />
+                    </div>
                 </CardHeader>
                 <CardContent>
-                    <div className="text-2xl font-bold">{stats.students}</div>
+                    <div className="text-2xl font-bold text-blue-700">{stats.students}</div>
                     <p className="text-xs text-muted-foreground">
                         Total registrados (Activos)
                     </p>
@@ -143,13 +150,15 @@ export function KPICards({ userRole }: KPICardsProps) {
             <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                     <CardTitle className="text-sm font-medium">Clases Hoy</CardTitle>
-                    <Calendar className="h-4 w-4 text-muted-foreground" />
+                    <div className="h-8 w-8 rounded-full bg-violet-100 flex items-center justify-center">
+                        <Calendar className="h-4 w-4 text-violet-600" />
+                    </div>
                 </CardHeader>
                 <CardContent>
-                    <div className="text-2xl font-bold">{stats.classesCompleted} / {stats.classesTotal}</div>
+                    <div className="text-2xl font-bold text-violet-700">{stats.classesCompleted} / {stats.classesTotal}</div>
                     <div className="mt-2 h-2 w-full bg-secondary rounded-full overflow-hidden">
                         <div
-                            className="h-full bg-primary transition-all duration-500"
+                            className="h-full bg-violet-500 transition-all duration-500"
                             style={{ width: `${stats.classesTotal > 0 ? (stats.classesCompleted / stats.classesTotal) * 100 : 0}%` }}
                         />
                     </div>
@@ -163,10 +172,12 @@ export function KPICards({ userRole }: KPICardsProps) {
                     <CardTitle className="text-sm font-medium">
                         Vehículos Disponibles
                     </CardTitle>
-                    <Car className="h-4 w-4 text-muted-foreground" />
+                    <div className="h-8 w-8 rounded-full bg-orange-100 flex items-center justify-center">
+                        <Car className="h-4 w-4 text-orange-600" />
+                    </div>
                 </CardHeader>
                 <CardContent>
-                    <div className="text-2xl font-bold">{stats.availableVehicles} / {stats.vehicles}</div>
+                    <div className="text-2xl font-bold text-orange-700">{stats.availableVehicles} / {stats.vehicles}</div>
                     <p className="text-xs text-muted-foreground">
                         {stats.vehicles - stats.availableVehicles} en mantenimiento/uso
                     </p>

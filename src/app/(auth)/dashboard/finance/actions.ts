@@ -3,13 +3,13 @@
 import { createClient } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
 
-export async function getPayments() {
+export async function getPayments(options?: { startDate?: string, endDate?: string }) {
     const supabase = await createClient();
 
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return { success: false, error: 'No autenticado' };
 
-    const { data, error } = await supabase
+    let query = supabase
         .from('payments')
         .select(`
             *,
@@ -17,6 +17,16 @@ export async function getPayments() {
             creator_name
         `)
         .order('payment_date', { ascending: false });
+
+    if (options?.startDate) {
+        query = query.gte('payment_date', options.startDate);
+    }
+    if (options?.endDate) {
+        // We assume endDate is the "next boundary" (e.g., start of next month), so we use strictly less strictly (lt)
+        query = query.lt('payment_date', options.endDate);
+    }
+
+    const { data, error } = await query;
 
     if (error) {
         console.error('Error fetching payments:', error);
@@ -70,16 +80,26 @@ export async function createPayment(formData: FormData) {
 
 // EXPENSES ACTIONS
 
-export async function getExpenses() {
+export async function getExpenses(options?: { startDate?: string, endDate?: string }) {
     const supabase = await createClient();
 
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return { success: false, error: 'No autenticado' };
 
-    const { data, error } = await supabase
+    let query = supabase
         .from('expenses')
         .select('*, creator_name')
         .order('date', { ascending: false });
+
+    if (options?.startDate) {
+        query = query.gte('date', options.startDate);
+    }
+    if (options?.endDate) {
+        // We assume endDate is the "next boundary" (e.g., start of next month), so we use strictly less strictly (lt)
+        query = query.lt('date', options.endDate);
+    }
+
+    const { data, error } = await query;
 
     if (error) {
         console.error('Error fetching expenses:', error);

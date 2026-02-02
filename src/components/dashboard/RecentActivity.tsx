@@ -5,47 +5,70 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { paymentsService, Payment } from "@/features/finance/services/payments.service";
 import { Calendar, User } from "lucide-react";
+import { createClient } from "@/lib/supabase/client";
 
-const MOCK_CLASSES = [
-    {
-        id: 1,
-        student: "Ana Martínez",
-        instructor: "Carlos Pérez",
-        time: "10:00 AM",
-        status: "Confirmada",
-        date: "Hoy"
-    },
-    {
-        id: 2,
-        student: "Luis Rodríguez",
-        instructor: "Maria García",
-        time: "11:30 AM",
-        status: "Pendiente",
-        date: "Hoy"
-    },
-    {
-        id: 3,
-        student: "Elena Torres",
-        instructor: "Carlos Pérez",
-        time: "14:00 PM",
-        status: "Confirmada",
-        date: "Hoy"
-    }
-];
+
+interface ClassActivity {
+    id: string;
+    student_name: string;
+    instructor_name: string;
+    start_time: string;
+    status: string;
+}
 
 export function RecentActivity() {
     const [payments, setPayments] = useState<Payment[]>([]);
+    const [classes, setClasses] = useState<ClassActivity[]>([]);
+    const [loadingClasses, setLoadingClasses] = useState(true);
 
     useEffect(() => {
-        const fetchActivity = async () => {
+        const fetchData = async () => {
+            const supabase = createClient();
+
+            // 1. Fetch Recent Payments
             try {
                 const recentPayments = await paymentsService.getRecentPayments();
                 setPayments(recentPayments);
             } catch (error) {
-                console.error(error);
+                console.error("Error fetching payments", error);
+            }
+
+            // 2. Fetch Today's Classes
+            try {
+                const today = new Date().toISOString().split('T')[0];
+                const { data: appointments } = await supabase
+                    .from('appointments')
+                    .select(`
+                        id,
+                        start_time,
+                        status,
+                        student:students(first_name, last_name),
+                        instructor:instructors(first_name, last_name)
+                    `)
+                    .eq('scheduled_date', today)
+                    .order('start_time', { ascending: true })
+                    .limit(5);
+
+                if (appointments) {
+                    const mappedClasses = appointments.map((apt: any) => ({
+                        id: apt.id,
+                        student_name: `${apt.student?.first_name} ${apt.student?.last_name}`,
+                        instructor_name: `${apt.instructor?.first_name} ${apt.instructor?.last_name}`,
+                        start_time: apt.start_time.slice(0, 5), // HH:MM
+                        status: apt.status === 'confirmed' ? 'Confirmada' :
+                            apt.status === 'completed' ? 'Completada' :
+                                apt.status === 'pending' ? 'Pendiente' : apt.status
+                    }));
+                    setClasses(mappedClasses);
+                }
+            } catch (error) {
+                console.error("Error fetching classes", error);
+            } finally {
+                setLoadingClasses(false);
             }
         };
-        fetchActivity();
+
+        fetchData();
     }, []);
 
     return (
@@ -60,19 +83,27 @@ export function RecentActivity() {
                 </CardHeader>
                 <CardContent>
                     <div className="space-y-4">
-                        {MOCK_CLASSES.map((clase) => (
-                            <div key={clase.id} className="flex items-center justify-between border-b pb-4 last:border-0 last:pb-0">
-                                <div className="flex items-center gap-4">
-                                    <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/10">
-                                        <Calendar className="h-4 w-4 text-primary" />
-                                    </div>
-                                    <div className="space-y-1">
-                                        <p className="text-sm font-medium leading-none">{clase.time} - {clase.student}</p>
-                                        <p className="text-xs text-muted-foreground">{clase.instructor} • {clase.status}</p>
+                        {loadingClasses ? (
+                            <p className="text-sm text-muted-foreground text-center py-4">Cargando...</p>
+                        ) : classes.length === 0 ? (
+                            <p className="text-sm text-muted-foreground text-center py-4">
+                                No hay clases programadas para hoy.
+                            </p>
+                        ) : (
+                            classes.map((clase) => (
+                                <div key={clase.id} className="flex items-center justify-between border-b pb-4 last:border-0 last:pb-0">
+                                    <div className="flex items-center gap-4">
+                                        <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/10">
+                                            <Calendar className="h-4 w-4 text-primary" />
+                                        </div>
+                                        <div className="space-y-1">
+                                            <p className="text-sm font-medium leading-none">{clase.start_time} - {clase.student_name}</p>
+                                            <p className="text-xs text-muted-foreground">{clase.instructor_name} • {clase.status}</p>
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
-                        ))}
+                            ))
+                        )}
                     </div>
                 </CardContent>
             </Card>

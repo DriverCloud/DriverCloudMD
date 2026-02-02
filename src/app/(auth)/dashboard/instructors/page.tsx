@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Plus, Pencil, BadgeInfo, Mail, Phone } from "lucide-react";
+import { Plus, Pencil, BadgeInfo, Mail, Phone, MoreVertical, Eye } from "lucide-react";
 import {
     Dialog,
     DialogContent,
@@ -10,10 +10,19 @@ import {
     DialogTitle,
     DialogTrigger,
 } from "@/components/ui/dialog";
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuLabel,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { InstructorForm } from "@/features/instructors/components/InstructorForm";
 import { Instructor, instructorsService } from "@/features/instructors/service";
 import { InstructorDetailsDialog } from "@/components/instructors/InstructorDetailsDialog";
+import { EditInstructorDialog } from '@/components/instructors/EditInstructorDialog';
 
 export default function InstructorsPage() {
     const [instructors, setInstructors] = useState<Instructor[]>([]);
@@ -62,43 +71,68 @@ export default function InstructorsPage() {
             ) : (
                 <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                     {instructors.map((instructor) => (
-                        <InstructorDetailsDialog key={instructor.id} instructor={instructor}>
-                            <Card className="relative group hover:border-primary transition-all duration-300 cursor-pointer overflow-hidden shadow-sm hover:shadow-md">
-                                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                    <CardTitle className="text-lg font-bold">
+                        <Card key={instructor.id} className="relative group transition-all duration-300 overflow-hidden shadow-sm hover:shadow-md border-muted">
+                            <CardHeader className="flex flex-row items-center gap-4 pb-2">
+                                <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-lg">
+                                    {instructor.first_name[0]}{instructor.last_name[0]}
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                    <CardTitle className="text-lg font-bold truncate">
                                         {instructor.first_name} {instructor.last_name}
                                     </CardTitle>
-                                    <div className="text-primary opacity-0 group-hover:opacity-100 transition-opacity">
-                                        <BadgeInfo className="h-5 w-5" />
-                                    </div>
-                                </CardHeader>
-                                <CardContent>
-                                    <div className="space-y-4">
-                                        <div className="grid grid-cols-2 gap-2 text-xs">
-                                            <div>
-                                                <p className="text-muted-foreground uppercase text-[10px] tracking-tight">Licencia</p>
-                                                <p className="font-medium truncate">{instructor.license_number}</p>
-                                            </div>
-                                            {instructor.cuil && (
-                                                <div>
-                                                    <p className="text-muted-foreground uppercase text-[10px] tracking-tight">CUIL</p>
-                                                    <p className="font-medium truncate">{instructor.cuil}</p>
-                                                </div>
-                                            )}
+                                    <div className="flex items-center gap-2 mt-1">
+                                        <div className="text-xs font-medium px-2 py-0.5 rounded-full bg-muted text-muted-foreground border truncate max-w-[120px]">
+                                            {instructor.license_number}
                                         </div>
+                                    </div>
+                                </div>
+                                <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                        <Button variant="ghost" size="icon" className="h-8 w-8">
+                                            <MoreVertical className="h-4 w-4 text-muted-foreground" />
+                                        </Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent align="end">
+                                        <DropdownMenuLabel>Acciones</DropdownMenuLabel>
+                                        <DropdownMenuSeparator />
+                                        <InstructorDetailsDialog instructor={instructor}>
+                                            <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="cursor-pointer">
+                                                <Eye className="mr-2 h-4 w-4" /> Ver Detalles
+                                            </DropdownMenuItem>
+                                        </InstructorDetailsDialog>
+                                        <EditInstructorDialog instructor={instructor}>
+                                            <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="cursor-pointer">
+                                                <Pencil className="mr-2 h-4 w-4" /> Editar
+                                            </DropdownMenuItem>
+                                        </EditInstructorDialog>
+                                    </DropdownMenuContent>
+                                </DropdownMenu>
+                            </CardHeader>
+                            <CardContent>
+                                <div className="space-y-3 pt-2">
+                                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                        <div className="bg-primary/5 p-1.5 rounded-full">
+                                            <Mail className="h-3.5 w-3.5 text-primary" />
+                                        </div>
+                                        <span className="truncate flex-1">{instructor.email || 'Sin email'}</span>
+                                    </div>
+                                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                        <div className="bg-primary/5 p-1.5 rounded-full">
+                                            <Phone className="h-3.5 w-3.5 text-primary" />
+                                        </div>
+                                        <span className="truncate flex-1">{instructor.phone || 'Sin teléfono'}</span>
+                                    </div>
+                                </div>
 
-                                        <div className="pt-2 border-t flex flex-col gap-1">
-                                            <p className="text-xs text-muted-foreground truncate flex items-center gap-1">
-                                                <Mail className="h-3 w-3" /> {instructor.email}
-                                            </p>
-                                            <p className="text-xs text-muted-foreground truncate flex items-center gap-1">
-                                                <Phone className="h-3 w-3" /> {instructor.phone}
-                                            </p>
-                                        </div>
-                                    </div>
-                                </CardContent>
-                            </Card>
-                        </InstructorDetailsDialog>
+                                <div className="mt-4 pt-4 border-t flex gap-2">
+                                    <InstructorDetailsDialog instructor={instructor}>
+                                        <Button variant="outline" className="w-full">
+                                            Ver Perfil
+                                        </Button>
+                                    </InstructorDetailsDialog>
+                                </div>
+                            </CardContent>
+                        </Card>
                     ))}
                 </div>
             )}

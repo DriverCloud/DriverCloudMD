@@ -1,13 +1,23 @@
 'use client';
 
 import { Search, X } from "lucide-react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { useState, useEffect } from "react";
 
 export function SearchBar() {
     const router = useRouter();
     const searchParams = useSearchParams();
+    const pathname = usePathname();
     const [query, setQuery] = useState(searchParams.get('search') || "");
+
+    // Determine placeholder based on path
+    const getPlaceholder = () => {
+        if (pathname.includes('/students')) return "Buscar estudiante...";
+        if (pathname.includes('/vehicles')) return "Buscar vehículo...";
+        if (pathname.includes('/instructors')) return "Buscar instructor...";
+        if (pathname.includes('/classes')) return "Buscar clase...";
+        return "Buscar...";
+    };
 
     // Update internal state if URL changes (e.g. clearing search)
     useEffect(() => {
@@ -16,16 +26,18 @@ export function SearchBar() {
 
     const handleSearch = (e: React.FormEvent) => {
         e.preventDefault();
+        // Keep the search on the current path/module
+        // Assuming the module page handles ?search=...
         if (query.trim()) {
-            router.push(`/dashboard/students?search=${encodeURIComponent(query)}`, { scroll: false });
+            router.push(`${pathname}?search=${encodeURIComponent(query)}`, { scroll: false });
         } else {
-            router.push(`/dashboard/students`, { scroll: false });
+            router.push(`${pathname}`, { scroll: false });
         }
     };
 
     const handleClear = () => {
         setQuery("");
-        router.push(`/dashboard/students`, { scroll: false });
+        router.push(`${pathname}`, { scroll: false });
     };
 
     return (
@@ -38,7 +50,7 @@ export function SearchBar() {
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 className="block w-full pl-10 pr-10 py-2 border-none rounded-lg leading-5 bg-muted/50 text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:bg-background sm:text-sm transition-all"
-                placeholder="Buscar estudiante..."
+                placeholder={getPlaceholder()}
             />
             {query && (
                 <button

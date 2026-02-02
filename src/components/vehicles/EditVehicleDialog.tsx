@@ -34,9 +34,10 @@ interface EditVehicleDialogProps {
         transmission_type: string;
         status: string;
     };
+    trigger?: React.ReactNode;
 }
 
-export function EditVehicleDialog({ vehicle }: EditVehicleDialogProps) {
+export function EditVehicleDialog({ vehicle, trigger }: EditVehicleDialogProps) {
     const [open, setOpen] = useState(false);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -66,9 +67,11 @@ export function EditVehicleDialog({ vehicle }: EditVehicleDialogProps) {
     return (
         <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
-                <Button variant="ghost" size="sm">
-                    <Pencil className="h-4 w-4" />
-                </Button>
+                {trigger || (
+                    <Button variant="ghost" size="sm">
+                        <Pencil className="h-4 w-4" />
+                    </Button>
+                )}
             </DialogTrigger>
             <DialogContent className="sm:max-w-[500px]">
                 <form onSubmit={handleSubmit}>
