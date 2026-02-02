@@ -2,12 +2,21 @@
 
 import { createClient } from '@/lib/supabase/server'
 import { addDays, format } from 'date-fns'
+import { revalidatePath } from 'next/cache'
 
 export async function getNotifications() {
     const supabase = await createClient()
 
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return []
+
+    // 1. Get Read Notifications
+    const { data: readNotifications } = await supabase
+        .from('notification_reads')
+        .select('notification_id')
+        .eq('user_id', user.id)
+
+    const readIds = new Set(readNotifications?.map(n => n.notification_id) || [])
 
     const notifications: any[] = []
     const now = new Date()
@@ -32,13 +41,14 @@ export async function getNotifications() {
 
     if (upcomingClasses) {
         (upcomingClasses as any[]).forEach(appointment => {
+            const id = `class-${appointment.id}`
             notifications.push({
-                id: `class-${appointment.id}`,
+                id,
                 type: 'class',
                 title: 'Clase Próxima',
                 message: `${appointment.student?.first_name} ${appointment.student?.last_name} - ${appointment.start_time.slice(0, 5)}`,
                 time: appointment.scheduled_date === format(now, 'yyyy-MM-dd') ? 'Hoy' : 'Mañana',
-                read: false
+                read: readIds.has(id)
             })
         })
     }
@@ -54,23 +64,44 @@ export async function getNotifications() {
 
     if (pendingPayments) {
         pendingPayments.forEach(student => {
+            const id = `payment-${student.id}`
             notifications.push({
-                id: `payment-${student.id}`,
+                id,
                 type: 'payment',
                 title: 'Pago Pendiente',
                 message: `${student.first_name} ${student.last_name} debe $${Math.abs(student.balance).toLocaleString()}`,
                 time: 'Pendiente',
-                read: false
+                read: readIds.has(id)
             })
         })
     }
 
     // Sort by type priority (classes first, then payments)
     notifications.sort((a, b) => {
-        if (a.type === 'class' && b.type !== 'class') return -1
-        if (a.type !== 'class' && b.type === 'class') return 1
-        return 0
+        if (a.read === b.read) {
+             if (a.type === 'class' && b.type !== 'class') return -1
+             if (a.type !== 'class' && b.type === 'class') return 1
+             return 0
+        }
+        return a.read ? 1 : -1 // Unread first
     })
 
     return notifications.slice(0, 10) // Limit to 10 total
+}
+
+export async function markNotificationAsRead(notificationId: string) {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return
+
+    await supabase
+        .from('notification_reads')
+        .insert({
+            user_id: user.id,
+            notification_id: notificationId
+        })
+        .onConflict('user_id, notification_id')
+        .ignore()
+
+    revalidatePath('/')
 }

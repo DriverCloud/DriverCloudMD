@@ -10,6 +10,8 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { Badge } from '@/components/ui/badge'
 import { NotificationItem } from './NotificationItem'
+import { markNotificationAsRead } from './actions'
+import { useRouter } from 'next/navigation'
 
 export interface Notification {
     id: string
@@ -24,9 +26,31 @@ interface NotificationBellProps {
     notifications: Notification[]
 }
 
-export function NotificationBell({ notifications }: NotificationBellProps) {
+export function NotificationBell({ notifications: initialNotifications }: NotificationBellProps) {
     const [open, setOpen] = useState(false)
+    const [notifications, setNotifications] = useState(initialNotifications)
+    const router = useRouter()
+
+    useEffect(() => {
+        setNotifications(initialNotifications)
+    }, [initialNotifications])
+
     const unreadCount = notifications.filter(n => !n.read).length
+
+    const handleMarkAsRead = async (id: string) => {
+        // Optimistic update
+        setNotifications(prev => prev.map(n =>
+            n.id === id ? { ...n, read: true } : n
+        ))
+
+        try {
+            await markNotificationAsRead(id)
+            router.refresh()
+        } catch (error) {
+            console.error('Failed to mark as read:', error)
+            // Revert on error? mostly fine to just leave it as read in UI or user will retry
+        }
+    }
 
     return (
         <DropdownMenu open={open} onOpenChange={setOpen}>
@@ -62,6 +86,7 @@ export function NotificationBell({ notifications }: NotificationBellProps) {
                             <NotificationItem
                                 key={notification.id}
                                 notification={notification}
+                                onRead={() => handleMarkAsRead(notification.id)}
                             />
                         ))
                     )}
