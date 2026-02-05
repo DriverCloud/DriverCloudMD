@@ -13,6 +13,9 @@ export interface Instructor {
     emergency_contact_phone?: string;
     license_number: string;
     license_expiry?: string;
+    salary_type?: 'fixed' | 'per_class' | 'mixed';
+    base_salary?: number;
+    price_per_class?: number;
     status: 'active' | 'inactive';
 }
 
@@ -44,6 +47,9 @@ export const instructorsService = {
             license_number: i.license_number,
             license_expiry: i.license_expiry,
             status: i.status || 'active',
+            salary_type: i.salary_type,
+            base_salary: i.base_salary,
+            price_per_class: i.price_per_class
         }));
     },
 

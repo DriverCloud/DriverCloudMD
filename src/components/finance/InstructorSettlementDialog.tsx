@@ -44,6 +44,10 @@ export function InstructorSettlementDialog({ instructor, children }: InstructorS
 
     const [calculation, setCalculation] = useState<SettlementCalculation | null>(null);
 
+    const formatCurrency = (amount: number) => {
+        return new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(amount);
+    };
+
     const handleCalculate = async () => {
         setCalculating(true);
         const result = await calculateSettlement(instructor.id, startDate, endDate);
@@ -130,7 +134,7 @@ export function InstructorSettlementDialog({ instructor, children }: InstructorS
                         {calculating ? (
                             <>
                                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                Calculando...
+                                Calculating...
                             </>
                         ) : (
                             <>
@@ -158,18 +162,32 @@ export function InstructorSettlementDialog({ instructor, children }: InstructorS
                             <div className="border-t pt-4 space-y-2">
                                 <div className="flex justify-between items-center text-sm">
                                     <span className="text-muted-foreground">Básico Mensual:</span>
-                                    <span>${calculation.amounts.base.toLocaleString()}</span>
+                                    <span>{formatCurrency(calculation.amounts.base)}</span>
                                 </div>
                                 <div className="flex justify-between items-center text-sm">
                                     <span className="text-muted-foreground">
                                         Variable ({calculation.stats.completed_classes} x ${calculation.instructor.price_per_class}):
                                     </span>
-                                    <span>${calculation.amounts.variable.toLocaleString()}</span>
+                                    <span>{formatCurrency(calculation.amounts.variable)}</span>
                                 </div>
-                                <div className="flex justify-between items-center font-bold text-lg pt-2 border-t border-dashed">
-                                    <span>Total a Pagar:</span>
-                                    <span className="text-emerald-600">${calculation.amounts.total.toLocaleString()}</span>
+                            </div>
+
+                            {/* Breakdown Section */}
+                            {calculation.breakdown && calculation.breakdown.length > 0 && (
+                                <div className="mt-2 pl-4 text-xs text-muted-foreground space-y-1 bg-background/50 p-2 rounded border border-border/50">
+                                    <p className="font-semibold uppercase tracking-wider mb-1 text-[10px]">Detalle por Valor</p>
+                                    {calculation.breakdown.map((item, idx) => (
+                                        <div key={idx} className="flex justify-between items-center">
+                                            <span>{item.count} clases x {formatCurrency(item.rate)}</span>
+                                            <span className="font-mono">{formatCurrency(item.subtotal)}</span>
+                                        </div>
+                                    ))}
                                 </div>
+                            )}
+
+                            <div className="flex justify-between items-center font-bold text-lg pt-2 border-t border-dashed">
+                                <span>Total a Pagar:</span>
+                                <span className="text-emerald-600">{formatCurrency(calculation.amounts.total)}</span>
                             </div>
 
                             <div className="pt-2">
@@ -198,6 +216,6 @@ export function InstructorSettlementDialog({ instructor, children }: InstructorS
                     </Button>
                 </DialogFooter>
             </DialogContent>
-        </Dialog>
+        </Dialog >
     );
 }

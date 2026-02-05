@@ -311,6 +311,29 @@ export async function createAppointment(formData: FormData) {
 
     const classNumber = (activePackage.total_credits || activePackage.credits) - activePackage.credits + 1;
 
+    // Get instructor details for payment snapshot
+    const { data: instructor } = await supabase
+        .from('instructors')
+        .select('price_per_class, salary_type') // We can use salary_type as a "code" or part of it if needed, but user mentioned codes like P1/P2. 
+        // Assuming price_per_class is the amount. The user mentioned "code" (P1, P2) which implies a new field on instructor or just a convention. 
+        // Since we didn't add a 'payment_code' to instructors table yet, let's assume we just store the amount for now, 
+        // OR we can generate a code based on date or just leave it null if not explicit.
+        // User said: "mis clases de manejo tienen un código... P1... ese valor se le va a pagar 5000".
+        // It seems the "code" represents the "price tier".
+        // For now, I'll store the amount. Defining the code might require more business logic or a separate table of 'PriceCodes'.
+        // Given the prompt, I will just store the amount. If the user wants to store "P1", they'd need to define where "P1" comes from.
+        // Wait, the user said "yo se que el valor... va a ser en referencia al código".
+        // AND "como podria yo para poder identificar que clases tienen un valor...".
+        // IF I store the amount, that solves the "identify value" part.
+        // The "code" might be useful but if it's not in the instructor profile, I can't guess it.
+        // I will snapshot the PRICE. That's the most critical part.
+        // I'll also add a TODO or just leave code null for now unless I find a source for it.
+        .eq('id', instructorId)
+        .single();
+
+    // NOTE: In a real scenario, we might want to fetch a specific 'ClassPrice' table. 
+    // Here we use the instructor's current configured price.
+
     const { data, error } = await supabase.from('appointments').insert({
         school_id: membership.school_id,
         owner_id: membership.owner_id,
@@ -326,7 +349,9 @@ export async function createAppointment(formData: FormData) {
         notes: notes || null,
         created_by: user.id,
         package_id: activePackage.id,
-        class_number: classNumber
+        class_number: classNumber,
+        instructor_payment_amount: instructor?.price_per_class || 0, // Snapshot current price
+        // instructor_payment_code: 'STD' // Placeholder or derived if needed
     }).select().single();
 
     if (error) {
@@ -453,6 +478,23 @@ export async function updateAppointment(appointmentId: string, formData: FormDat
         await refundCredits(supabase, appointmentId);
     }
 
+    // If instructor changed, we might want to update the payment snapshot to the NEW instructor's price.
+    // Or keep the old one? Usually if you change instructor, the new one gets paid THEIR rate.
+    // Let's assume we update it.
+
+    let paymentUpdate = {};
+    if (currentAppointment && currentAppointment.instructor_id !== instructorId) {
+        const { data: newInstructor } = await supabase
+            .from('instructors')
+            .select('price_per_class')
+            .eq('id', instructorId)
+            .single();
+
+        if (newInstructor) {
+            paymentUpdate = { instructor_payment_amount: newInstructor.price_per_class };
+        }
+    }
+
     const { data, error } = await supabase
         .from('appointments')
         .update({
@@ -465,6 +507,7 @@ export async function updateAppointment(appointmentId: string, formData: FormDat
             end_time: endTime,
             status: newStatus,
             notes: notes || null,
+            ...paymentUpdate // Merging payment update if applicable
         })
         .eq('id', appointmentId)
         .select()
@@ -538,7 +581,7 @@ export async function updateAppointmentStatus(appointmentId: string, status: str
     // Get current appointment to check for refund necessity
     const { data: currentAppointment } = await supabase
         .from('appointments')
-        .select('status, student_id') // student_id needed for ownership check if we wanted to be strict, but mainly status
+        .select('status, student_id, instructor_id') // Added instructor_id for payment change check
         .eq('id', appointmentId)
         .single();
 

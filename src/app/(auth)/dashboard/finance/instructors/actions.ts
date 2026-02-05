@@ -20,6 +20,11 @@ export type SettlementCalculation = {
         total_classes: number;
         completed_classes: number;
     };
+    breakdown: {
+        rate: number;
+        count: number;
+        subtotal: number;
+    }[];
     amounts: {
         base: number;
         variable: number;
@@ -59,7 +64,7 @@ export async function calculateSettlement(
         return { success: false, error: 'Error al consultar clases' };
     }
 
-    // 3. Fetch specific rates
+    // 3. Fetch specific rates (legacy/alternative system)
     const { data: rates } = await supabase
         .from('instructor_rates')
         .select('*')
@@ -73,6 +78,7 @@ export async function calculateSettlement(
 
     let variableAmount = 0;
     let finalBaseAmount = 0;
+    const breakdownMap = new Map<number, number>(); // Price -> Count
 
     if (instructor.salary_type === 'fixed') {
         finalBaseAmount = baseAmount;
@@ -85,14 +91,34 @@ export async function calculateSettlement(
 
         // Calculate variable part class by class
         variableAmount = appointments?.reduce((total, appointment) => {
-            // Find specific rate for this class type
-            const specificRate = rates?.find(r => r.class_type_id === appointment.class_type_id);
-            const rate = specificRate ? Number(specificRate.amount) : defaultPricePerClass;
+            let rate = 0;
+
+            // PRIORITY 1: Snapshot value on appointment
+            if (appointment.instructor_payment_amount !== null && appointment.instructor_payment_amount !== undefined) {
+                rate = Number(appointment.instructor_payment_amount);
+            }
+            // PRIORITY 2: Specific Rate by Class Type
+            else {
+                const specificRate = rates?.find(r => r.class_type_id === appointment.class_type_id);
+                rate = specificRate ? Number(specificRate.amount) : defaultPricePerClass;
+            }
+
+            // Update breakdown
+            const currentCount = breakdownMap.get(rate) || 0;
+            breakdownMap.set(rate, currentCount + 1);
+
             return total + rate;
         }, 0) || 0;
     }
 
     const totalAmount = finalBaseAmount + variableAmount;
+
+    // Convert map to array for frontend
+    const breakdown = Array.from(breakdownMap.entries()).map(([rate, count]) => ({
+        rate,
+        count,
+        subtotal: rate * count
+    })).sort((a, b) => b.rate - a.rate); // Sort by rate descending
 
     return {
         success: true,
@@ -113,6 +139,7 @@ export async function calculateSettlement(
                 total_classes: completedClasses, // Just showing completed as total relevant
                 completed_classes: completedClasses
             },
+            breakdown: breakdown,
             amounts: {
                 base: finalBaseAmount,
                 variable: variableAmount,

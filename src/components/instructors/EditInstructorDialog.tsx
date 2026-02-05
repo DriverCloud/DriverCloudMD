@@ -248,7 +248,7 @@ export function EditInstructorDialog({ instructor, children }: EditInstructorDia
                                                     type="number"
                                                     step="0.01"
                                                     className="pl-7"
-                                                    defaultValue={instructor.price_per_class || 0}
+                                                    defaultValue={instructor.price_per_class ?? 0}
                                                     disabled={loading}
                                                 />
                                             </div>
