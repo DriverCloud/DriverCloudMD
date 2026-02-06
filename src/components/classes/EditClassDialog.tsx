@@ -299,58 +299,83 @@ export function EditClassDialog({
                     ) : (
                         <>
                             {/* View Mode - Display Info */}
-                            <div className="grid grid-cols-2 gap-4">
-                                <div className="space-y-1">
-                                    <Label className="text-xs text-muted-foreground">Fecha</Label>
-                                    <div className="flex items-center font-medium">
-                                        <CalendarIcon className="mr-2 h-4 w-4 text-muted-foreground" />
-                                        {appointment.scheduled_date}
+                            <div className="space-y-5">
+                                {/* Student Card */}
+                                <div className="flex items-center gap-4 p-4 bg-primary/5 rounded-xl border border-primary/10 shadow-sm">
+                                    <div className="h-12 w-12 rounded-full bg-primary/20 flex items-center justify-center shrink-0">
+                                        <User className="h-6 w-6 text-primary" />
                                     </div>
-                                </div>
-                                <div className="space-y-1">
-                                    <Label className="text-xs text-muted-foreground">Hora</Label>
-                                    <div className="flex items-center font-medium">
-                                        <Clock className="mr-2 h-4 w-4 text-muted-foreground" />
-                                        {appointment.start_time.slice(0, 5)} - {appointment.end_time?.slice(0, 5)}
-                                    </div>
-                                </div>
-                            </div>
-
-                            <Separator />
-
-                            <div className="space-y-4">
-                                <div className="grid gap-2">
-                                    <Label className="text-xs text-muted-foreground">Estudiante</Label>
-                                    <div className="flex items-center text-lg font-semibold">
-                                        <User className="mr-2 h-5 w-5 text-muted-foreground" />
-                                        {appointment.student?.first_name} {appointment.student?.last_name}
+                                    <div className="flex-1 min-w-0">
+                                        <p className="text-xs text-primary/70 font-semibold uppercase tracking-wider mb-0.5">Estudiante</p>
+                                        <h3 className="text-lg font-bold text-foreground truncate">
+                                            {appointment.student?.first_name} {appointment.student?.last_name}
+                                        </h3>
                                     </div>
                                 </div>
 
+                                {/* Date & Time Grid */}
                                 <div className="grid grid-cols-2 gap-4">
-                                    <div className="grid gap-1">
-                                        <Label className="text-xs text-muted-foreground">Instructor</Label>
-                                        <div className="font-medium">
-                                            {appointment.instructor?.first_name} {appointment.instructor?.last_name}
+                                    <div className="p-3 rounded-lg border bg-card flex flex-col justify-center space-y-1 hover:bg-muted/30 transition-colors">
+                                        <div className="flex items-center gap-2 text-muted-foreground">
+                                            <CalendarIcon className="h-3.5 w-3.5" />
+                                            <span className="text-[10px] font-bold uppercase tracking-wider">Fecha</span>
                                         </div>
+                                        <p className="font-semibold text-sm">{appointment.scheduled_date}</p>
                                     </div>
-                                    <div className="grid gap-1">
-                                        <Label className="text-xs text-muted-foreground">Vehículo</Label>
-                                        <div className="font-medium flex items-center">
-                                            <Car className="mr-2 h-4 w-4 text-muted-foreground" />
-                                            {appointment.vehicle?.brand} {appointment.vehicle?.model}
+                                    <div className="p-3 rounded-lg border bg-card flex flex-col justify-center space-y-1 hover:bg-muted/30 transition-colors">
+                                        <div className="flex items-center gap-2 text-muted-foreground">
+                                            <Clock className="h-3.5 w-3.5" />
+                                            <span className="text-[10px] font-bold uppercase tracking-wider">Horario</span>
                                         </div>
+                                        <p className="font-semibold text-sm">
+                                            {appointment.start_time.slice(0, 5)} - {appointment.end_time?.slice(0, 5)}
+                                        </p>
                                     </div>
+                                </div>
 
-                                    {appointment.notes && (
-                                        <div className="grid gap-1">
-                                            <Label className="text-xs text-muted-foreground">Notas</Label>
-                                            <div className="text-sm bg-muted/50 p-2 rounded-md">
-                                                {appointment.notes}
+                                <Separator className="my-2" />
+
+                                {/* Resources Section */}
+                                <div className="space-y-3">
+                                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider pl-1">Recursos Asignados</p>
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                        <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/40 border border-border/50">
+                                            <div className="bg-background p-2 rounded-full border shadow-sm">
+                                                <User className="h-4 w-4 text-muted-foreground" />
+                                            </div>
+                                            <div className="min-w-0">
+                                                <p className="text-[10px] text-muted-foreground uppercase font-medium">Instructor</p>
+                                                <p className="text-sm font-medium truncate">
+                                                    {appointment.instructor?.first_name} {appointment.instructor?.last_name}
+                                                </p>
                                             </div>
                                         </div>
-                                    )}
+                                        <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/40 border border-border/50">
+                                            <div className="bg-background p-2 rounded-full border shadow-sm">
+                                                <Car className="h-4 w-4 text-muted-foreground" />
+                                            </div>
+                                            <div className="min-w-0">
+                                                <p className="text-[10px] text-muted-foreground uppercase font-medium">Vehículo</p>
+                                                <p className="text-sm font-medium truncate">
+                                                    {appointment.vehicle?.brand} {appointment.vehicle?.model}
+                                                    <span className="text-xs text-muted-foreground ml-1">({appointment.vehicle?.license_plate})</span>
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
+
+                                {appointment.notes && (
+                                    <div className="bg-yellow-50/50 border border-yellow-100 p-3 rounded-lg text-sm">
+                                        <div className="flex items-center gap-2 mb-1">
+                                            <Edit className="h-3 w-3 text-yellow-600" />
+                                            <span className="font-bold text-yellow-700 text-xs uppercase">Notas</span>
+                                        </div>
+                                        <p className="text-yellow-900/80 leading-relaxed pl-5">
+                                            {appointment.notes}
+                                        </p>
+                                    </div>
+                                )}
                             </div>
                         </>
                     )}

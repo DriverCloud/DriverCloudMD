@@ -36,11 +36,12 @@ function getPaymentMethodBadge(method: string) {
 }
 
 interface FinancePageProps {
-    searchParams: Promise<{ month?: string }>;
+    searchParams: Promise<{ month?: string; view?: string }>;
 }
 
 export default async function FinancePage({ searchParams }: FinancePageProps) {
     const params = await searchParams;
+    const viewMode = (params.view === 'accrual' ? 'accrual' : 'cash') as 'cash' | 'accrual';
 
     // Parse Date Filter
     const today = new Date();
@@ -62,7 +63,11 @@ export default async function FinancePage({ searchParams }: FinancePageProps) {
     const startStr = format(startDate, 'yyyy-MM-dd');
     const endStr = format(endDate, 'yyyy-MM-dd');
 
-    const { data: payments } = await getPayments({ startDate: startStr, endDate: endStr });
+    const { data: payments } = await getPayments({
+        startDate: startStr,
+        endDate: endStr,
+        dateMode: viewMode
+    });
     const { data: expenses } = await getExpenses({ startDate: startStr, endDate: endStr });
     const resources = await getResources();
 
@@ -80,7 +85,11 @@ export default async function FinancePage({ searchParams }: FinancePageProps) {
     // For simplicity, let's just map the data we have.
 
     payments?.forEach((p: any) => {
-        const date = p.payment_date?.split('T')[0];
+        // Use imputation_date if present and in accrual mode?
+        // Actually getPayments already filtered the list. 
+        // Visualizing: If accrual, we likely want to plot it on the imputation date day.
+        const dateToUse = (viewMode === 'accrual' && p.imputation_date) ? p.imputation_date : p.payment_date;
+        const date = dateToUse?.split('T')[0];
         if (!date) return;
         const current = daysMap.get(date) || { income: 0, expense: 0 };
         daysMap.set(date, { ...current, income: current.income + Number(p.amount) });
@@ -102,9 +111,31 @@ export default async function FinancePage({ searchParams }: FinancePageProps) {
     return (
         <div className="flex flex-col gap-6 p-6 max-w-7xl mx-auto">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                <div>
+                <div className="space-y-1">
                     <h1 className="text-3xl font-bold tracking-tight">Finanzas</h1>
-                    <p className="text-muted-foreground">Control de ingresos, gastos y balance general.</p>
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <span>Ver por:</span>
+                        <div className="inline-flex items-center rounded-lg border bg-background p-0.5">
+                            <Link
+                                href={`/dashboard/finance?month=${params.month || ''}&view=cash`}
+                                className={cn(
+                                    "px-2.5 py-1 rounded-md transition-all text-xs font-medium",
+                                    viewMode === 'cash' ? "bg-muted text-foreground shadow-sm" : "hover:bg-muted/50 text-muted-foreground"
+                                )}
+                            >
+                                Caja (Real)
+                            </Link>
+                            <Link
+                                href={`/dashboard/finance?month=${params.month || ''}&view=accrual`}
+                                className={cn(
+                                    "px-2.5 py-1 rounded-md transition-all text-xs font-medium",
+                                    viewMode === 'accrual' ? "bg-muted text-foreground shadow-sm" : "hover:bg-muted/50 text-muted-foreground"
+                                )}
+                            >
+                                Devengado (Contable)
+                            </Link>
+                        </div>
+                    </div>
                 </div>
                 <div className="flex flex-col md:flex-row gap-2 items-end md:items-center">
                     <DateFilter />

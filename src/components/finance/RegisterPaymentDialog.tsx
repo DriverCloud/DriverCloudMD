@@ -109,7 +109,7 @@ export function RegisterPaymentDialog({ students }: RegisterPaymentDialogProps) 
                                 </div>
                             </div>
                             <div className="space-y-2">
-                                <Label htmlFor="date">Fecha *</Label>
+                                <Label htmlFor="date">Fecha de Pago *</Label>
                                 <Input
                                     type="date"
                                     name="date"
@@ -117,6 +117,23 @@ export function RegisterPaymentDialog({ students }: RegisterPaymentDialogProps) 
                                     required
                                 />
                             </div>
+                        </div>
+
+                        <div className="space-y-2">
+                            <Label htmlFor="imputation_date" className="flex items-center gap-2">
+                                Fecha de Imputación
+                                <span className="text-[10px] text-muted-foreground font-normal bg-muted px-1.5 py-0.5 rounded-sm">
+                                    Opcional (Devengado)
+                                </span>
+                            </Label>
+                            <Input
+                                type="date"
+                                name="imputation_date"
+                                placeholder="Si es distinto a fecha de pago"
+                            />
+                            <p className="text-[10px] text-muted-foreground">
+                                Úselo para asignar este ingreso a otro mes contable (ej: Señas).
+                            </p>
                         </div>
 
                         <div className="space-y-2">
