@@ -468,7 +468,7 @@ export async function updateAppointment(appointmentId: string, formData: FormDat
     // This must be done BEFORE the update to get the correct current status
     const { data: currentAppointment } = await supabase
         .from('appointments')
-        .select('status')
+        .select('status, instructor_id')
         .eq('id', appointmentId)
         .single();
 
@@ -581,14 +581,13 @@ export async function updateAppointmentStatus(appointmentId: string, status: str
     // Get current appointment to check for refund necessity
     const { data: currentAppointment } = await supabase
         .from('appointments')
-        .select('status, student_id, instructor_id') // Added instructor_id for payment change check
+        .select('status, student_id, instructor_id')
         .eq('id', appointmentId)
         .single();
 
     if (!currentAppointment) return { success: false, error: 'Turno no encontrado' };
 
     // REFUND LOGIC: If appointment was scheduled and is being cancelled/rescheduled
-    // Note: This logic duplicates some of updateAppointment/cancelAppointment but is specific to just status change here.
     if (currentAppointment.status === 'scheduled' && (status === 'rescheduled' || status === 'cancelled')) {
         await refundCredits(supabase, appointmentId);
     }
@@ -607,4 +606,35 @@ export async function updateAppointmentStatus(appointmentId: string, status: str
 
     revalidatePath('/dashboard/classes');
     return { success: true, data };
+}
+
+export async function searchClasses(query: string) {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return { success: false, error: 'No autenticado' };
+
+    if (!query || query.length < 2) return { success: true, data: [] };
+
+    // Search for students matching the query
+    // We use !inner to ensure we only get appointments for matching students
+    const { data: appointments, error } = await supabase
+        .from('appointments')
+        .select(`
+            id,
+            scheduled_date,
+            start_time,
+            class_number,
+            student:students!inner(first_name, last_name)
+        `)
+        .or(`first_name.ilike.%${query}%,last_name.ilike.%${query}%`, { foreignTable: 'students' })
+        // Removed date filter to include history
+        .order('scheduled_date', { ascending: false }) // Newest (Future) to Oldest
+        .limit(10);
+
+    if (error) {
+        console.error('Error searching classes:', error);
+        return { success: false, error: 'Error al buscar clases' };
+    }
+
+    return { success: true, data: appointments };
 }

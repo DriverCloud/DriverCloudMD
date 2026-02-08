@@ -24,7 +24,7 @@ export async function Header() {
     const initials = email.substring(0, 2).toUpperCase();
 
     return (
-        <header className="flex items-center justify-between h-16 px-6 bg-background border-b border-border shrink-0 z-10">
+        <header className="flex items-center justify-between h-16 px-6 bg-background border-b border-border shrink-0 z-50">
             {/* Left: Breadcrumbs */}
             <DashboardBreadcrumb />
 
