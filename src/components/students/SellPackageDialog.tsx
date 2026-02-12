@@ -20,9 +20,10 @@ import { useRouter } from 'next/navigation';
 interface SellPackageDialogProps {
     studentId: string;
     studentName: string;
+    trigger?: React.ReactNode;
 }
 
-export function SellPackageDialog({ studentId, studentName }: SellPackageDialogProps) {
+export function SellPackageDialog({ studentId, studentName, trigger }: SellPackageDialogProps) {
     const [open, setOpen] = useState(false);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -87,9 +88,11 @@ export function SellPackageDialog({ studentId, studentName }: SellPackageDialogP
     return (
         <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
-                <Button variant="ghost" size="icon" title="Vender Paquete">
-                    <DollarSign className="h-4 w-4 text-emerald-600" />
-                </Button>
+                {trigger || (
+                    <Button variant="ghost" size="icon" title="Vender Paquete">
+                        <DollarSign className="h-4 w-4 text-emerald-600" />
+                    </Button>
+                )}
             </DialogTrigger>
             <DialogContent className="sm:max-w-[425px]">
                 <form onSubmit={handleSubmit}>

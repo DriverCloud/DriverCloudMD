@@ -17,7 +17,9 @@ import { Textarea } from "@/components/ui/textarea"
 
 import { createStudent } from '@/app/(auth)/dashboard/students/actions';
 import { useRouter } from 'next/navigation';
-import { Loader2 } from 'lucide-react';
+import { Loader2, CheckCircle, DollarSign, Plus } from 'lucide-react';
+import { SellPackageDialog } from './SellPackageDialog';
+import { RegisterPaymentDialog } from '../finance/RegisterPaymentDialog';
 
 interface CreateStudentDialogProps {
     trigger?: React.ReactNode;
@@ -27,6 +29,7 @@ export function CreateStudentDialog({ trigger }: CreateStudentDialogProps) {
     const [open, setOpen] = useState(false);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [createdStudent, setCreatedStudent] = useState<any>(null);
     const router = useRouter();
 
     async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -38,7 +41,7 @@ export function CreateStudentDialog({ trigger }: CreateStudentDialogProps) {
         const result = await createStudent(formData);
 
         if (result.success) {
-            setOpen(false);
+            setCreatedStudent(result.data);
             router.refresh();
             // Reset form
             (e.target as HTMLFormElement).reset();
@@ -58,221 +61,288 @@ export function CreateStudentDialog({ trigger }: CreateStudentDialogProps) {
                 className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto"
                 onInteractOutside={(e) => e.preventDefault()}
             >
-                <form onSubmit={handleSubmit}>
-                    <DialogHeader>
-                        <DialogTitle>Nuevo Estudiante</DialogTitle>
-                        <DialogDescription>
-                            Completa los datos del nuevo estudiante. Los campos marcados con * son obligatorios.
-                        </DialogDescription>
-                    </DialogHeader>
+                {createdStudent ? (
+                    <div className="py-2">
+                        <DialogHeader>
+                            <DialogTitle className="flex items-center gap-2 text-emerald-600">
+                                <CheckCircle className="h-5 w-5" />
+                                Estudiante Creado
+                            </DialogTitle>
+                            <DialogDescription>
+                                {createdStudent.first_name} {createdStudent.last_name} ha sido registrado exitosamente.
+                                <br />
+                                ¿Qué deseas hacer ahora?
+                            </DialogDescription>
+                        </DialogHeader>
 
-                    <div className="grid gap-4 py-4">
-                        {error && (
-                            <div className="bg-destructive/10 text-destructive px-4 py-3 rounded-lg text-sm">
-                                {error}
-                            </div>
-                        )}
+                        <div className="grid gap-3 py-6">
+                            <SellPackageDialog
+                                studentId={createdStudent.id}
+                                studentName={`${createdStudent.first_name} ${createdStudent.last_name}`}
+                                trigger={
+                                    <Button className="w-full justify-start h-auto py-3 px-4" variant="outline">
+                                        <div className="flex items-center">
+                                            <div className="bg-emerald-100 p-2 rounded-full mr-3">
+                                                <DollarSign className="h-5 w-5 text-emerald-600" />
+                                            </div>
+                                            <div className="text-left">
+                                                <div className="font-semibold">Vender Paquete</div>
+                                                <div className="text-xs text-muted-foreground">Asignar clases o cursos</div>
+                                            </div>
+                                        </div>
+                                    </Button>
+                                }
+                            />
 
-                        <div className="grid grid-cols-2 gap-4">
-                            <div className="space-y-2">
-                                <Label htmlFor="first_name">Nombre *</Label>
-                                <Input
-                                    id="first_name"
-                                    name="first_name"
-                                    placeholder="Juan"
-                                    required
-                                    disabled={loading}
-                                />
-                            </div>
-                            <div className="space-y-2">
-                                <Label htmlFor="last_name">Apellido *</Label>
-                                <Input
-                                    id="last_name"
-                                    name="last_name"
-                                    placeholder="Pérez"
-                                    required
-                                    disabled={loading}
-                                />
-                            </div>
-                        </div>
-
-                        <div className="grid grid-cols-2 gap-4">
-                            <div className="space-y-2">
-                                <Label htmlFor="email">Email</Label>
-                                <Input
-                                    id="email"
-                                    name="email"
-                                    type="email"
-                                    placeholder="juan.perez@example.com"
-                                    disabled={loading}
-                                />
-                            </div>
-                            <div className="space-y-2">
-                                <Label htmlFor="gender">Género</Label>
-                                <select
-                                    id="gender"
-                                    name="gender"
-                                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                                    disabled={loading}
-                                >
-                                    <option value="other">Otro</option>
-                                    <option value="male">Hombre</option>
-                                    <option value="female">Mujer</option>
-                                </select>
-                            </div>
-                        </div>
-                        <div className="grid grid-cols-2 gap-4">
-                            <div className="space-y-2">
-                                <Label htmlFor="dni">DNI / Identificación</Label>
-                                <Input
-                                    id="dni"
-                                    name="dni"
-                                    placeholder="Ingrese DNI"
-                                    required
-                                    disabled={loading}
-                                />
-                            </div>
-                            <div className="space-y-2">
-                                <Label htmlFor="status">Estado</Label>
-                                <select
-                                    id="status"
-                                    name="status"
-                                    defaultValue="active"
-                                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                                    disabled={loading}
-                                >
-                                    <option value="active">Activo (En Curso)</option>
-                                    <option value="paused">En Pausa (Suspendido)</option>
-                                    <option value="finished">Finalizado (Sin Examen)</option>
-                                    <option value="graduated">Graduado (Licencia Obtenida)</option>
-                                    <option value="failed">Reprobado / Requiere Refuerzo</option>
-                                    <option value="abandoned">Abandono</option>
-                                </select>
-                            </div>
-                        </div>
-
-                        <div className="grid grid-cols-2 gap-4">
-                            <div className="space-y-2">
-                                <Label htmlFor="phone">Teléfono</Label>
-                                <Input
-                                    id="phone"
-                                    name="phone"
-                                    placeholder="+54 11 ..."
-                                    disabled={loading}
-                                />
-                            </div>
-                            <div className="space-y-2">
-                                <Label htmlFor="address">Dirección</Label>
-                                <Input
-                                    id="address"
-                                    name="address"
-                                    placeholder="Calle, Número, Localidad"
-                                    disabled={loading}
-                                />
-                            </div>
-                        </div>
-
-                        <div className="grid grid-cols-2 gap-4">
-                            <div className="space-y-2">
-                                <Label htmlFor="date_of_birth">Fecha de Nacimiento</Label>
-                                <Input
-                                    id="date_of_birth"
-                                    name="date_of_birth"
-                                    type="date"
-                                    disabled={loading}
-                                />
-                            </div>
-                            <div className="space-y-2">
-                                <Label htmlFor="referral_source">¿Cómo nos conoció?</Label>
-                                <select
-                                    id="referral_source"
-                                    name="referral_source"
-                                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                                    disabled={loading}
-                                >
-                                    <option value="">Seleccionar...</option>
-                                    <option value="Meta">Meta (Facebook/Instagram)</option>
-                                    <option value="Google Maps">Google Maps</option>
-                                    <option value="Conocidos">Conocidos</option>
-                                    <option value="Otro">Otro</option>
-                                </select>
-                            </div>
-                        </div>
-
-                        <div className="flex items-center space-x-2 py-2">
-                            <div className="flex items-center gap-2">
-                                <Input
-                                    type="checkbox"
-                                    id="has_license"
-                                    name="has_license"
-                                    value="true"
-                                    className="h-4 w-4 w-auto shadow-none border-slate-300"
-                                />
-                                <Label htmlFor="has_license">¿Posee Licencia de Conducir?</Label>
-                            </div>
-                        </div>
-
-                        <div className="space-y-2">
-                            <Label htmlFor="disability_observation">Observaciones / Discapacidad</Label>
-                            <Textarea
-                                id="disability_observation"
-                                name="disability_observation"
-                                placeholder="Detalle cualquier condición relevante o incapacidad (auditiva, motora, etc.)"
-                                disabled={loading}
+                            <RegisterPaymentDialog
+                                students={[createdStudent]}
+                                preSelectedStudentId={createdStudent.id}
+                                trigger={
+                                    <Button className="w-full justify-start h-auto py-3 px-4" variant="outline">
+                                        <div className="flex items-center">
+                                            <div className="bg-blue-100 p-2 rounded-full mr-3">
+                                                <Plus className="h-5 w-5 text-blue-600" />
+                                            </div>
+                                            <div className="text-left">
+                                                <div className="font-semibold">Registrar Pago</div>
+                                                <div className="text-xs text-muted-foreground">Ingresar un cobro inicial</div>
+                                            </div>
+                                        </div>
+                                    </Button>
+                                }
                             />
                         </div>
 
-                        <div className="pt-4 border-t">
-                            <h3 className="font-medium mb-3">Contacto de Emergencia</h3>
-                            <div className="grid gap-3">
+                        <DialogFooter>
+                            <Button
+                                variant="ghost"
+                                onClick={() => {
+                                    setOpen(false);
+                                    // Small timeout to reset state after animation closes
+                                    setTimeout(() => setCreatedStudent(null), 300);
+                                }}
+                            >
+                                Cerrar y Salir
+                            </Button>
+                        </DialogFooter>
+                    </div>
+                ) : (
+                    <form onSubmit={handleSubmit}>
+                        <DialogHeader>
+                            <DialogTitle>Nuevo Estudiante</DialogTitle>
+                            <DialogDescription>
+                                Completa los datos del nuevo estudiante. Los campos marcados con * son obligatorios.
+                            </DialogDescription>
+                        </DialogHeader>
+
+                        <div className="grid gap-4 py-4">
+                            {error && (
+                                <div className="bg-destructive/10 text-destructive px-4 py-3 rounded-lg text-sm">
+                                    {error}
+                                </div>
+                            )}
+
+                            <div className="grid grid-cols-2 gap-4">
                                 <div className="space-y-2">
-                                    <Label htmlFor="emergency_contact_name">Nombre Completo</Label>
+                                    <Label htmlFor="first_name">Nombre *</Label>
                                     <Input
-                                        id="emergency_contact_name"
-                                        name="emergency_contact_name"
-                                        placeholder="María López"
+                                        id="first_name"
+                                        name="first_name"
+                                        placeholder="Juan"
+                                        required
                                         disabled={loading}
                                     />
                                 </div>
-                                <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <Label htmlFor="last_name">Apellido *</Label>
+                                    <Input
+                                        id="last_name"
+                                        name="last_name"
+                                        placeholder="Pérez"
+                                        required
+                                        disabled={loading}
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <Label htmlFor="email">Email</Label>
+                                    <Input
+                                        id="email"
+                                        name="email"
+                                        type="email"
+                                        placeholder="juan.perez@example.com"
+                                        disabled={loading}
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="gender">Género</Label>
+                                    <select
+                                        id="gender"
+                                        name="gender"
+                                        className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                                        disabled={loading}
+                                    >
+                                        <option value="other">Otro</option>
+                                        <option value="male">Hombre</option>
+                                        <option value="female">Mujer</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <Label htmlFor="dni">DNI / Identificación</Label>
+                                    <Input
+                                        id="dni"
+                                        name="dni"
+                                        placeholder="Ingrese DNI"
+                                        required
+                                        disabled={loading}
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="status">Estado</Label>
+                                    <select
+                                        id="status"
+                                        name="status"
+                                        defaultValue="active"
+                                        className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                                        disabled={loading}
+                                    >
+                                        <option value="active">Activo (En Curso)</option>
+                                        <option value="paused">En Pausa (Suspendido)</option>
+                                        <option value="finished">Finalizado (Sin Examen)</option>
+                                        <option value="graduated">Graduado (Licencia Obtenida)</option>
+                                        <option value="failed">Reprobado / Requiere Refuerzo</option>
+                                        <option value="abandoned">Abandono</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <Label htmlFor="phone">Teléfono</Label>
+                                    <Input
+                                        id="phone"
+                                        name="phone"
+                                        placeholder="+54 11 ..."
+                                        disabled={loading}
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="address">Dirección</Label>
+                                    <Input
+                                        id="address"
+                                        name="address"
+                                        placeholder="Calle, Número, Localidad"
+                                        disabled={loading}
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <Label htmlFor="date_of_birth">Fecha de Nacimiento</Label>
+                                    <Input
+                                        id="date_of_birth"
+                                        name="date_of_birth"
+                                        type="date"
+                                        disabled={loading}
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="referral_source">¿Cómo nos conoció?</Label>
+                                    <select
+                                        id="referral_source"
+                                        name="referral_source"
+                                        className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                                        disabled={loading}
+                                    >
+                                        <option value="">Seleccionar...</option>
+                                        <option value="Meta">Meta (Facebook/Instagram)</option>
+                                        <option value="Google Maps">Google Maps</option>
+                                        <option value="Conocidos">Conocidos</option>
+                                        <option value="Otro">Otro</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div className="flex items-center space-x-2 py-2">
+                                <div className="flex items-center gap-2">
+                                    <Input
+                                        type="checkbox"
+                                        id="has_license"
+                                        name="has_license"
+                                        value="true"
+                                        className="h-4 w-4 w-auto shadow-none border-slate-300"
+                                    />
+                                    <Label htmlFor="has_license">¿Posee Licencia de Conducir?</Label>
+                                </div>
+                            </div>
+
+                            <div className="space-y-2">
+                                <Label htmlFor="disability_observation">Observaciones / Discapacidad</Label>
+                                <Textarea
+                                    id="disability_observation"
+                                    name="disability_observation"
+                                    placeholder="Detalle cualquier condición relevante o incapacidad (auditiva, motora, etc.)"
+                                    disabled={loading}
+                                />
+                            </div>
+
+                            <div className="pt-4 border-t">
+                                <h3 className="font-medium mb-3">Contacto de Emergencia</h3>
+                                <div className="grid gap-3">
                                     <div className="space-y-2">
-                                        <Label htmlFor="emergency_contact_relation">Parentesco</Label>
+                                        <Label htmlFor="emergency_contact_name">Nombre Completo</Label>
                                         <Input
-                                            id="emergency_contact_relation"
-                                            name="emergency_contact_relation"
-                                            placeholder="Madre"
+                                            id="emergency_contact_name"
+                                            name="emergency_contact_name"
+                                            placeholder="María López"
                                             disabled={loading}
                                         />
                                     </div>
-                                    <div className="space-y-2">
-                                        <Label htmlFor="emergency_contact_phone">Teléfono</Label>
-                                        <Input
-                                            id="emergency_contact_phone"
-                                            name="emergency_contact_phone"
-                                            placeholder="+54 11 ..."
-                                            disabled={loading}
-                                        />
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div className="space-y-2">
+                                            <Label htmlFor="emergency_contact_relation">Parentesco</Label>
+                                            <Input
+                                                id="emergency_contact_relation"
+                                                name="emergency_contact_relation"
+                                                placeholder="Madre"
+                                                disabled={loading}
+                                            />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label htmlFor="emergency_contact_phone">Teléfono</Label>
+                                            <Input
+                                                id="emergency_contact_phone"
+                                                name="emergency_contact_phone"
+                                                placeholder="+54 11 ..."
+                                                disabled={loading}
+                                            />
+                                        </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
-                    </div>
 
-                    <DialogFooter>
-                        <Button
-                            type="button"
-                            variant="outline"
-                            onClick={() => setOpen(false)}
-                            disabled={loading}
-                        >
-                            Cancelar
-                        </Button>
-                        <Button type="submit" disabled={loading}>
-                            {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                            Crear Estudiante
-                        </Button>
-                    </DialogFooter>
-                </form>
+                        <DialogFooter>
+                            <Button
+                                type="button"
+                                variant="outline"
+                                onClick={() => setOpen(false)}
+                                disabled={loading}
+                            >
+                                Cancelar
+                            </Button>
+                            <Button type="submit" disabled={loading}>
+                                {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                Crear Estudiante
+                            </Button>
+                        </DialogFooter>
+                    </form>
+                )}
             </DialogContent>
         </Dialog>
     );

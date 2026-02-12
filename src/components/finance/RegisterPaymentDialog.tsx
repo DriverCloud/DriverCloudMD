@@ -26,9 +26,11 @@ import { Loader2, Plus, DollarSign } from 'lucide-react';
 
 interface RegisterPaymentDialogProps {
     students: any[];
+    preSelectedStudentId?: string;
+    trigger?: React.ReactNode;
 }
 
-export function RegisterPaymentDialog({ students }: RegisterPaymentDialogProps) {
+export function RegisterPaymentDialog({ students, preSelectedStudentId, trigger }: RegisterPaymentDialogProps) {
     const [open, setOpen] = useState(false);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -55,10 +57,12 @@ export function RegisterPaymentDialog({ students }: RegisterPaymentDialogProps) 
     return (
         <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
-                <Button>
-                    <Plus className="mr-2 h-4 w-4" />
-                    Registrar Pago
-                </Button>
+                {trigger || (
+                    <Button>
+                        <Plus className="mr-2 h-4 w-4" />
+                        Registrar Pago
+                    </Button>
+                )}
             </DialogTrigger>
             <DialogContent className="sm:max-w-[500px]">
                 <form onSubmit={handleSubmit}>
@@ -78,7 +82,7 @@ export function RegisterPaymentDialog({ students }: RegisterPaymentDialogProps) 
 
                         <div className="space-y-2">
                             <Label htmlFor="student_id">Estudiante *</Label>
-                            <Select name="student_id" required>
+                            <Select name="student_id" required defaultValue={preSelectedStudentId}>
                                 <SelectTrigger>
                                     <SelectValue placeholder="Seleccionar estudiante" />
                                 </SelectTrigger>

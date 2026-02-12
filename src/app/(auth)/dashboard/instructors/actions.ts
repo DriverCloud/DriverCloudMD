@@ -42,6 +42,9 @@ export async function createInstructor(formData: FormData): Promise<ActionState>
     const baseSalary = parseFloat(formData.get('base_salary') as string) || 0;
     const pricePerClass = parseFloat(formData.get('price_per_class') as string) || 0;
 
+    // Handle Rates
+    const ratesJson = formData.get('rates') as string;
+
     // Validate required fields
     if (!firstName || !lastName) {
         return { success: false, error: 'Nombre y apellido son requeridos' };
@@ -76,6 +79,31 @@ export async function createInstructor(formData: FormData): Promise<ActionState>
     if (error) {
         console.error('Error creating instructor:', error);
         return { success: false, error: 'Error al crear el instructor' };
+    }
+
+    // Insert Rates if provided
+    if (ratesJson) {
+        try {
+            const rates = JSON.parse(ratesJson);
+            if (rates.length > 0) {
+                const ratesToInsert = rates.map((r: any) => ({
+                    instructor_id: data.id,
+                    class_type_id: r.class_type_id,
+                    amount: r.amount
+                }));
+
+                const { error: ratesError } = await supabase
+                    .from('instructor_rates')
+                    .insert(ratesToInsert);
+
+                if (ratesError) {
+                    console.error('Error creating rates:', ratesError);
+                    // Not returning failure since main creation succeeded
+                }
+            }
+        } catch (e) {
+            console.error('Error processing rates:', e);
+        }
     }
 
     // Revalidate the instructors page to show the new instructor

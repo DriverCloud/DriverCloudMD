@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
@@ -13,16 +13,65 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { createInstructor } from '@/app/(auth)/dashboard/instructors/actions';
+import { createInstructor, getClassTypes } from '@/app/(auth)/dashboard/instructors/actions';
 import { useRouter } from 'next/navigation';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Plus, Trash2 } from 'lucide-react';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 export function CreateInstructorDialog() {
     const [open, setOpen] = useState(false);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [salaryType, setSalaryType] = useState<string>('per_class');
+
+    // Rates State
+    const [classTypes, setClassTypes] = useState<any[]>([]);
+    const [rates, setRates] = useState<any[]>([]);
+    const [newRateType, setNewRateType] = useState<string>('');
+    const [newRateAmount, setNewRateAmount] = useState<string>('');
+
     const router = useRouter();
+
+    useEffect(() => {
+        if (open) {
+            const fetchData = async () => {
+                const types = await getClassTypes();
+                setClassTypes(types || []);
+            };
+            fetchData();
+        }
+    }, [open]);
+
+    const handleAddRate = () => {
+        if (!newRateType || !newRateAmount) return;
+
+        // Check if exists
+        if (rates.some(r => r.class_type_id === newRateType)) {
+            return; // Already exists
+        }
+
+        const type = classTypes.find(t => t.id === newRateType);
+
+        setRates([...rates, {
+            class_type_id: newRateType,
+            amount: parseFloat(newRateAmount),
+            // optimistically add name for display
+            class_types: { name: type?.name }
+        }]);
+        setNewRateType('');
+        setNewRateAmount('');
+    };
+
+    const handleRemoveRate = (classTypeId: string) => {
+        setRates(rates.filter(r => r.class_type_id !== classTypeId));
+    };
+
+    // Helper to get name of class type
+    const getTypeName = (rate: any) => {
+        if (rate.class_types?.name) return rate.class_types.name;
+        const type = classTypes.find(t => t.id === rate.class_type_id);
+        return type ? type.name : 'Desconocido';
+    };
 
     async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
         e.preventDefault();
@@ -30,6 +79,10 @@ export function CreateInstructorDialog() {
         setError(null);
 
         const formData = new FormData(e.currentTarget);
+
+        // Append Rates
+        formData.append('rates', JSON.stringify(rates));
+
         const result = await createInstructor(formData);
 
         if (result.success) {
@@ -38,6 +91,9 @@ export function CreateInstructorDialog() {
             // Reset form
             (e.target as HTMLFormElement).reset();
             setSalaryType('per_class'); // Reset local state
+            setRates([]); // Reset rates
+            setNewRateType('');
+            setNewRateAmount('');
         } else {
             setError(result.error || 'Error desconocido');
         }
@@ -53,7 +109,7 @@ export function CreateInstructorDialog() {
             <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
                 <form onSubmit={handleSubmit}>
                     <DialogHeader>
-                        <DialogTitle>Nuevo Instructor</DialogTitle>
+                        <DialogTitle>Crear Nuevo Instructor</DialogTitle>
                         <DialogDescription>
                             Completa los datos del nuevo instructor. Los campos marcados con * son obligatorios.
                         </DialogDescription>
@@ -202,73 +258,148 @@ export function CreateInstructorDialog() {
                                     )}
                                 </div>
                             </div>
-                        </div>
 
-                        <div className="space-y-2">
-                            <Label className="text-sm font-semibold text-primary">Contacto de Emergencia</Label>
-                            <div className="grid grid-cols-2 gap-4">
-                                <div className="space-y-2">
-                                    <Label htmlFor="emergency_contact_name">Nombre</Label>
-                                    <Input
-                                        id="emergency_contact_name"
-                                        name="emergency_contact_name"
-                                        placeholder="Nombre del contacto"
-                                        disabled={loading}
-                                    />
+                            {/* Tarifas Específicas / Excepciones */}
+                            {(salaryType === 'per_class' || salaryType === 'mixed') && (
+                                <div className="pt-2 border-t space-y-3">
+                                    <Label className="text-sm font-semibold">Tarifas por Tipo de Clase (Excepciones)</Label>
+
+                                    <div className="flex gap-2 items-end">
+                                        <div className="flex-1 space-y-1">
+                                            <Label className="text-xs">Tipo de Clase</Label>
+                                            <select
+                                                className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors"
+                                                value={newRateType}
+                                                onChange={(e) => setNewRateType(e.target.value)}
+                                            >
+                                                <option value="">Seleccionar...</option>
+                                                {classTypes.map(t => (
+                                                    <option key={t.id} value={t.id}>{t.name}</option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                        <div className="w-24 space-y-1">
+                                            <Label className="text-xs">Monto</Label>
+                                            <Input
+                                                type="number"
+                                                className="h-9"
+                                                value={newRateAmount}
+                                                onChange={(e) => setNewRateAmount(e.target.value)}
+                                            />
+                                        </div>
+                                        <Button type="button" size="sm" onClick={handleAddRate} disabled={!newRateType || !newRateAmount}>
+                                            <Plus className="h-4 w-4" />
+                                        </Button>
+                                    </div>
+
+                                    {rates.length > 0 && (
+                                        <div className="rounded-md border bg-background">
+                                            <Table>
+                                                <TableHeader>
+                                                    <TableRow className="h-8 hover:bg-transparent">
+                                                        <TableHead className="h-8 text-xs">Tipo</TableHead>
+                                                        <TableHead className="h-8 text-xs text-right">Monto</TableHead>
+                                                        <TableHead className="h-8 w-[40px]"></TableHead>
+                                                    </TableRow>
+                                                </TableHeader>
+                                                <TableBody>
+                                                    {rates.map((rate) => (
+                                                        <TableRow key={rate.class_type_id} className="h-9">
+                                                            <TableCell className="py-1 text-sm font-medium">
+                                                                {getTypeName(rate)}
+                                                            </TableCell>
+                                                            <TableCell className="py-1 text-sm text-right">
+                                                                ${rate.amount}
+                                                            </TableCell>
+                                                            <TableCell className="py-1">
+                                                                <Button
+                                                                    type="button"
+                                                                    variant="ghost"
+                                                                    size="icon"
+                                                                    className="h-6 w-6 text-muted-foreground hover:text-destructive"
+                                                                    onClick={() => handleRemoveRate(rate.class_type_id)}
+                                                                >
+                                                                    <Trash2 className="h-3 w-3" />
+                                                                </Button>
+                                                            </TableCell>
+                                                        </TableRow>
+                                                    ))}
+                                                </TableBody>
+                                            </Table>
+                                        </div>
+                                    )}
                                 </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="emergency_contact_phone">Teléfono</Label>
-                                    <Input
-                                        id="emergency_contact_phone"
-                                        name="emergency_contact_phone"
-                                        placeholder="Teléfono alternativo"
-                                        disabled={loading}
-                                    />
-                                </div>
+                            )}
+                        </div>
+                    </div>
+
+                    <div className="space-y-2">
+                        <Label className="text-sm font-semibold text-primary">Contacto de Emergencia</Label>
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <Label htmlFor="emergency_contact_name">Nombre</Label>
+                                <Input
+                                    id="emergency_contact_name"
+                                    name="emergency_contact_name"
+                                    placeholder="Nombre del contacto"
+                                    disabled={loading}
+                                />
                             </div>
-                        </div>
-
-                        <div className="space-y-2">
-                            <Label className="text-sm font-semibold text-primary">Licencia de Conducir</Label>
-                            <div className="grid grid-cols-2 gap-4">
-                                <div className="space-y-2">
-                                    <Label htmlFor="license_number">Número</Label>
-                                    <Input
-                                        id="license_number"
-                                        name="license_number"
-                                        placeholder="B-12345678"
-                                        disabled={loading}
-                                    />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="license_expiry">Vencimiento</Label>
-                                    <Input
-                                        id="license_expiry"
-                                        name="license_expiry"
-                                        type="date"
-                                        disabled={loading}
-                                    />
-                                </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="emergency_contact_phone">Teléfono</Label>
+                                <Input
+                                    id="emergency_contact_phone"
+                                    name="emergency_contact_phone"
+                                    placeholder="Teléfono alternativo"
+                                    disabled={loading}
+                                />
                             </div>
                         </div>
                     </div>
 
-                    <DialogFooter>
-                        <Button
-                            type="button"
-                            variant="outline"
-                            onClick={() => setOpen(false)}
-                            disabled={loading}
-                        >
-                            Cancelar
-                        </Button>
-                        <Button type="submit" disabled={loading}>
-                            {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                            Crear Instructor
-                        </Button>
-                    </DialogFooter>
-                </form>
-            </DialogContent>
-        </Dialog>
+                    <div className="space-y-2">
+                        <Label className="text-sm font-semibold text-primary">Licencia de Conducir</Label>
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <Label htmlFor="license_number">Número</Label>
+                                <Input
+                                    id="license_number"
+                                    name="license_number"
+                                    placeholder="B-12345678"
+                                    disabled={loading}
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="license_expiry">Vencimiento</Label>
+                                <Input
+                                    id="license_expiry"
+                                    name="license_expiry"
+                                    type="date"
+                                    disabled={loading}
+                                />
+                            </div>
+                        </div>
+                    </div>
+
+
+
+                </div>
+                <DialogFooter>
+                    <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => setOpen(false)}
+                        disabled={loading}
+                    >
+                        Cancelar
+                    </Button>
+                    <Button type="submit" disabled={loading}>
+                        {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                        Crear Instructor
+                    </Button>
+                </DialogFooter>
+            </form>
+        </DialogContent>
+        </Dialog >
     );
 }
