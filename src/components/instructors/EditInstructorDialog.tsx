@@ -131,7 +131,7 @@ export function EditInstructorDialog({ instructor, children }: EditInstructorDia
                     </Button>
                 )}
             </DialogTrigger>
-            <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+            <DialogContent className="sm:max-w-[500px] max-h-[75vh] overflow-y-auto">
                 <form onSubmit={handleSubmit}>
                     <DialogHeader>
                         <DialogTitle>Editar Instructor</DialogTitle>
@@ -140,14 +140,14 @@ export function EditInstructorDialog({ instructor, children }: EditInstructorDia
                         </DialogDescription>
                     </DialogHeader>
 
-                    <div className="grid gap-4 py-4">
+                    <div className="grid gap-3 py-2">
                         {error && (
                             <div className="bg-destructive/10 text-destructive px-4 py-3 rounded-lg text-sm">
                                 {error}
                             </div>
                         )}
 
-                        <div className="grid grid-cols-2 gap-4">
+                        <div className="grid grid-cols-2 gap-3">
                             <div className="space-y-2">
                                 <Label htmlFor="first_name">Nombre *</Label>
                                 <Input
@@ -193,7 +193,7 @@ export function EditInstructorDialog({ instructor, children }: EditInstructorDia
                         </div>
 
                         {/* Configuración de Pago */}
-                        <div className="space-y-4 bg-muted/30 p-4 rounded-lg border border-border/50">
+                        <div className="space-y-3 bg-muted/30 p-3 rounded-lg border border-border/50">
                             <div className="flex items-center gap-2">
                                 <div className="h-8 w-8 rounded-full bg-emerald-100 flex items-center justify-center">
                                     <span className="text-emerald-600 font-bold">$</span>
@@ -201,8 +201,8 @@ export function EditInstructorDialog({ instructor, children }: EditInstructorDia
                                 <Label className="text-base font-semibold">Acuerdo de Pago General</Label>
                             </div>
 
-                            <div className="grid gap-4 pl-10">
-                                <div className="grid grid-cols-2 gap-4">
+                            <div className="grid gap-3 pl-8">
+                                <div className="grid grid-cols-2 gap-3">
                                     <div className="space-y-2">
                                         <Label htmlFor="salary_type">Modalidad</Label>
                                         <select
@@ -331,7 +331,7 @@ export function EditInstructorDialog({ instructor, children }: EditInstructorDia
                             </div>
                         </div>
 
-                        <div className="grid grid-cols-2 gap-4">
+                        <div className="grid grid-cols-2 gap-3">
                             <div className="space-y-2">
                                 <Label htmlFor="birth_date">Fecha de Nacimiento</Label>
                                 <Input
@@ -367,7 +367,7 @@ export function EditInstructorDialog({ instructor, children }: EditInstructorDia
 
                         <div className="space-y-2">
                             <Label className="text-sm font-semibold text-primary">Contacto de Emergencia</Label>
-                            <div className="grid grid-cols-2 gap-4">
+                            <div className="grid grid-cols-2 gap-3">
                                 <div className="space-y-2">
                                     <Label htmlFor="emergency_contact_name">Nombre</Label>
                                     <Input
@@ -393,7 +393,7 @@ export function EditInstructorDialog({ instructor, children }: EditInstructorDia
 
                         <div className="space-y-2">
                             <Label className="text-sm font-semibold text-primary">Licencia de Conducir</Label>
-                            <div className="grid grid-cols-2 gap-4">
+                            <div className="grid grid-cols-2 gap-3">
                                 <div className="space-y-2">
                                     <Label htmlFor="license_number">Número</Label>
                                     <Input

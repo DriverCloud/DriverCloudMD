@@ -83,6 +83,9 @@ export const instructorsService = {
                 emergency_contact_phone: instructor.emergency_contact_phone,
                 license_number: instructor.license_number,
                 license_expiry: instructor.license_expiry,
+                salary_type: instructor.salary_type || 'per_class',
+                base_salary: instructor.base_salary || 0,
+                price_per_class: instructor.price_per_class || 0,
                 school_id: membership.school_id,
                 owner_id: membership.owner_id,
                 status: 'active'

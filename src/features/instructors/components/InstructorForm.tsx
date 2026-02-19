@@ -1,13 +1,13 @@
 "use client";
 
-import { useForm } from "react-hook-form";
+import { useForm, type ControllerProps, type FieldPath } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Button } from "@/components/ui/button";
 import {
     Form,
     FormControl,
-    FormField,
+    FormField as BaseFormField,
     FormItem,
     FormLabel,
     FormMessage,
@@ -30,7 +30,18 @@ const formSchema = z.object({
     license_number: z.string().min(5, "Nro licencia requerido"),
     license_expiry: z.string().optional(),
     specialties: z.array(z.string()).optional(),
+    salary_type: z.enum(['per_class', 'fixed', 'mixed']).default('per_class'),
+    base_salary: z.coerce.number().optional(),
+    price_per_class: z.coerce.number().optional(),
 });
+
+type FormValues = z.infer<typeof formSchema>;
+
+const FormField = <TName extends FieldPath<FormValues>>(
+    props: ControllerProps<FormValues, TName>
+) => {
+    return <BaseFormField<FormValues, TName> {...props} />
+}
 
 const SPECIALTIES = [
     { id: "Manual", label: "Auto Manual" },
@@ -40,8 +51,8 @@ const SPECIALTIES = [
 ];
 
 export function InstructorForm({ onSuccess }: { onSuccess?: () => void }) {
-    const form = useForm<z.infer<typeof formSchema>>({
-        resolver: zodResolver(formSchema),
+    const form = useForm<FormValues>({
+        resolver: zodResolver(formSchema) as any,
         defaultValues: {
             first_name: "",
             last_name: "",
@@ -55,12 +66,20 @@ export function InstructorForm({ onSuccess }: { onSuccess?: () => void }) {
             license_number: "",
             license_expiry: "",
             specialties: [],
+            salary_type: "per_class" as "per_class" | "fixed" | "mixed",
+            base_salary: 0,
+            price_per_class: 0,
         },
     });
 
-    async function onSubmit(values: z.infer<typeof formSchema>) {
+    async function onSubmit(values: FormValues) {
         try {
-            await instructorsService.createInstructor(values);
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
+            const { specialties, ...instructorData } = values;
+            await instructorsService.createInstructor({
+                ...instructorData,
+                salary_type: instructorData.salary_type as 'fixed' | 'per_class' | 'mixed',
+            });
             toast.success("Instructor creado exitosamente");
             form.reset();
             onSuccess?.();
@@ -174,6 +193,82 @@ export function InstructorForm({ onSuccess }: { onSuccess?: () => void }) {
                     )}
                 />
 
+                {/* Configuración de Pago */}
+                <div className="space-y-4 bg-muted/30 p-4 rounded-lg border border-border/50">
+                    <div className="flex items-center gap-2">
+                        <div className="h-8 w-8 rounded-full bg-emerald-100 flex items-center justify-center">
+                            <span className="text-emerald-600 font-bold">$</span>
+                        </div>
+                        <h3 className="text-base font-semibold">Acuerdo de Pago General</h3>
+                    </div>
+
+                    <div className="grid gap-4 pl-10">
+                        <div className="grid grid-cols-2 gap-4">
+                            <FormField
+                                control={form.control}
+                                name="salary_type"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Modalidad</FormLabel>
+                                        <div className="relative">
+                                            <FormControl>
+                                                <select
+                                                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                                                    {...field}
+                                                >
+                                                    <option value="per_class">Por Clase (Comisión)</option>
+                                                    <option value="fixed">Sueldo Fijo Mensual</option>
+                                                    <option value="mixed">Mixto (Fijo + Comisión)</option>
+                                                </select>
+                                            </FormControl>
+                                        </div>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+
+                            {(form.watch('salary_type') === 'fixed' || form.watch('salary_type') === 'mixed') && (
+                                <FormField
+                                    control={form.control}
+                                    name="base_salary"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Sueldo Base Mensual</FormLabel>
+                                            <FormControl>
+                                                <div className="relative">
+                                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">$</span>
+                                                    <Input type="number" step="0.01" className="pl-7" placeholder="0.00" {...field} />
+                                                </div>
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                            )}
+
+                            {(form.watch('salary_type') === 'per_class' || form.watch('salary_type') === 'mixed') && (
+                                <FormField
+                                    control={form.control}
+                                    name="price_per_class"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Valor Base por Clase</FormLabel>
+                                            <FormControl>
+                                                <div className="relative">
+                                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">$</span>
+                                                    <Input type="number" step="0.01" className="pl-7" placeholder="0.00" {...field} />
+                                                </div>
+                                            </FormControl>
+                                            <p className="text-[10px] text-muted-foreground">Tarifa por defecto si no hay específica.</p>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                            )}
+                        </div>
+                    </div>
+                </div>
+
                 <div className="space-y-4 border-t pt-4 mt-4">
                     <h3 className="text-sm font-semibold text-primary">Contacto de Emergencia</h3>
                     <div className="grid grid-cols-2 gap-4">
@@ -241,45 +336,35 @@ export function InstructorForm({ onSuccess }: { onSuccess?: () => void }) {
                 <FormField
                     control={form.control}
                     name="specialties"
-                    render={() => (
+                    render={({ field }) => (
                         <FormItem>
                             <div className="mb-4">
                                 <FormLabel className="text-base">Especialidades</FormLabel>
                             </div>
                             <div className="grid grid-cols-2 gap-2">
                                 {SPECIALTIES.map((item) => (
-                                    <FormField
+                                    <FormItem
                                         key={item.id}
-                                        control={form.control}
-                                        name="specialties"
-                                        render={({ field }) => {
-                                            return (
-                                                <FormItem
-                                                    key={item.id}
-                                                    className="flex flex-row items-start space-x-3 space-y-0"
-                                                >
-                                                    <FormControl>
-                                                        <Checkbox
-                                                            checked={field.value?.includes(item.id) ?? false}
-                                                            onCheckedChange={(checked) => {
-                                                                const currentValues = field.value ?? [];
-                                                                return checked
-                                                                    ? field.onChange([...currentValues, item.id])
-                                                                    : field.onChange(
-                                                                        currentValues.filter(
-                                                                            (value) => value !== item.id
-                                                                        )
-                                                                    )
-                                                            }}
-                                                        />
-                                                    </FormControl>
-                                                    <FormLabel className="font-normal">
-                                                        {item.label}
-                                                    </FormLabel>
-                                                </FormItem>
-                                            )
-                                        }}
-                                    />
+                                        className="flex flex-row items-start space-x-3 space-y-0"
+                                    >
+                                        <FormControl>
+                                            <Checkbox
+                                                checked={field.value?.includes(item.id)}
+                                                onCheckedChange={(checked) => {
+                                                    return checked
+                                                        ? field.onChange([...(field.value || []), item.id])
+                                                        : field.onChange(
+                                                            (field.value || []).filter(
+                                                                (value) => value !== item.id
+                                                            )
+                                                        )
+                                                }}
+                                            />
+                                        </FormControl>
+                                        <FormLabel className="font-normal">
+                                            {item.label}
+                                        </FormLabel>
+                                    </FormItem>
                                 ))}
                             </div>
                             <FormMessage />

@@ -42,6 +42,8 @@ export function CreateInstructorDialog() {
         }
     }, [open]);
 
+    console.log('CreateInstructorDialog Render:', { open, salaryType, classTypesCount: classTypes.length });
+
     const handleAddRate = () => {
         if (!newRateType || !newRateAmount) return;
 
@@ -106,7 +108,7 @@ export function CreateInstructorDialog() {
             <DialogTrigger asChild>
                 <Button>Nuevo Instructor</Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
+            <DialogContent className="sm:max-w-[500px] max-h-[75vh] overflow-y-auto">
                 <form onSubmit={handleSubmit}>
                     <DialogHeader>
                         <DialogTitle>Crear Nuevo Instructor</DialogTitle>
@@ -115,14 +117,14 @@ export function CreateInstructorDialog() {
                         </DialogDescription>
                     </DialogHeader>
 
-                    <div className="grid gap-4 py-4">
+                    <div className="grid gap-3 py-2">
                         {error && (
                             <div className="bg-destructive/10 text-destructive px-4 py-3 rounded-lg text-sm">
                                 {error}
                             </div>
                         )}
 
-                        <div className="grid grid-cols-2 gap-4">
+                        <div className="grid grid-cols-2 gap-3">
                             <div className="space-y-2">
                                 <Label htmlFor="first_name">Nombre *</Label>
                                 <Input
@@ -167,7 +169,7 @@ export function CreateInstructorDialog() {
                             />
                         </div>
 
-                        <div className="grid grid-cols-2 gap-4">
+                        <div className="grid grid-cols-2 gap-3">
                             <div className="space-y-2">
                                 <Label htmlFor="birth_date">Fecha de Nacimiento</Label>
                                 <Input
@@ -199,30 +201,34 @@ export function CreateInstructorDialog() {
                         </div>
 
                         {/* Configuración de Pago */}
-                        <div className="space-y-2 bg-muted/30 p-3 rounded-lg border border-border/50">
-                            <Label className="text-sm font-semibold text-primary flex items-center gap-2">
-                                <span className="text-emerald-600">$</span> Acuerdo de Pago
-                            </Label>
-                            <div className="grid gap-3">
-                                <div className="space-y-2">
-                                    <Label htmlFor="salary_type">Modalidad de Cobro</Label>
-                                    <select
-                                        id="salary_type"
-                                        name="salary_type"
-                                        className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                                        value={salaryType}
-                                        onChange={(e) => setSalaryType(e.target.value)}
-                                        disabled={loading}
-                                    >
-                                        <option value="per_class">Por Clase (Comisión)</option>
-                                        <option value="fixed">Sueldo Fijo Mensual</option>
-                                        <option value="mixed">Mixto (Fijo + Comisión)</option>
-                                    </select>
+                        <div className="space-y-3 bg-muted/30 p-3 rounded-lg border border-border/50">
+                            <div className="flex items-center gap-2">
+                                <div className="h-8 w-8 rounded-full bg-emerald-100 flex items-center justify-center">
+                                    <span className="text-emerald-600 font-bold">$</span>
                                 </div>
+                                <Label className="text-base font-semibold">Acuerdo de Pago General</Label>
+                            </div>
 
-                                <div className="grid grid-cols-2 gap-4">
+                            <div className="grid gap-3 pl-8">
+                                <div className="grid grid-cols-2 gap-3">
+                                    <div className="space-y-2">
+                                        <Label htmlFor="salary_type">Modalidad</Label>
+                                        <select
+                                            id="salary_type"
+                                            name="salary_type"
+                                            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                                            value={salaryType}
+                                            onChange={(e) => setSalaryType(e.target.value)}
+                                            disabled={loading}
+                                        >
+                                            <option value="per_class">Por Clase (Comisión)</option>
+                                            <option value="fixed">Sueldo Fijo Mensual</option>
+                                            <option value="mixed">Mixto (Fijo + Comisión)</option>
+                                        </select>
+                                    </div>
+
                                     {(salaryType === 'fixed' || salaryType === 'mixed') && (
-                                        <div className="space-y-2 animate-in fade-in slide-in-from-top-1 duration-200">
+                                        <div className="space-y-2">
                                             <Label htmlFor="base_salary">Sueldo Base Mensual</Label>
                                             <div className="relative">
                                                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">$</span>
@@ -240,8 +246,8 @@ export function CreateInstructorDialog() {
                                     )}
 
                                     {(salaryType === 'per_class' || salaryType === 'mixed') && (
-                                        <div className="space-y-2 animate-in fade-in slide-in-from-top-1 duration-200">
-                                            <Label htmlFor="price_per_class">Valor por Clase</Label>
+                                        <div className="space-y-2">
+                                            <Label htmlFor="price_per_class">Valor Base por Clase</Label>
                                             <div className="relative">
                                                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">$</span>
                                                 <Input
@@ -254,88 +260,87 @@ export function CreateInstructorDialog() {
                                                     disabled={loading}
                                                 />
                                             </div>
+                                            <p className="text-[10px] text-muted-foreground">Tarifa por defecto si no hay específica.</p>
                                         </div>
                                     )}
                                 </div>
-                            </div>
 
-                            {/* Tarifas Específicas / Excepciones */}
-                            {(salaryType === 'per_class' || salaryType === 'mixed') && (
-                                <div className="pt-2 border-t space-y-3">
-                                    <Label className="text-sm font-semibold">Tarifas por Tipo de Clase (Excepciones)</Label>
+                                {(salaryType === 'per_class' || salaryType === 'mixed') && (
+                                    <div className="pt-2 border-t space-y-3 mt-3">
+                                        <Label className="text-sm font-semibold">Tarifas por Tipo de Clase (Excepciones)</Label>
 
-                                    <div className="flex gap-2 items-end">
-                                        <div className="flex-1 space-y-1">
-                                            <Label className="text-xs">Tipo de Clase</Label>
-                                            <select
-                                                className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors"
-                                                value={newRateType}
-                                                onChange={(e) => setNewRateType(e.target.value)}
-                                            >
-                                                <option value="">Seleccionar...</option>
-                                                {classTypes.map(t => (
-                                                    <option key={t.id} value={t.id}>{t.name}</option>
-                                                ))}
-                                            </select>
-                                        </div>
-                                        <div className="w-24 space-y-1">
-                                            <Label className="text-xs">Monto</Label>
-                                            <Input
-                                                type="number"
-                                                className="h-9"
-                                                value={newRateAmount}
-                                                onChange={(e) => setNewRateAmount(e.target.value)}
-                                            />
-                                        </div>
-                                        <Button type="button" size="sm" onClick={handleAddRate} disabled={!newRateType || !newRateAmount}>
-                                            <Plus className="h-4 w-4" />
-                                        </Button>
-                                    </div>
-
-                                    {rates.length > 0 && (
-                                        <div className="rounded-md border bg-background">
-                                            <Table>
-                                                <TableHeader>
-                                                    <TableRow className="h-8 hover:bg-transparent">
-                                                        <TableHead className="h-8 text-xs">Tipo</TableHead>
-                                                        <TableHead className="h-8 text-xs text-right">Monto</TableHead>
-                                                        <TableHead className="h-8 w-[40px]"></TableHead>
-                                                    </TableRow>
-                                                </TableHeader>
-                                                <TableBody>
-                                                    {rates.map((rate) => (
-                                                        <TableRow key={rate.class_type_id} className="h-9">
-                                                            <TableCell className="py-1 text-sm font-medium">
-                                                                {getTypeName(rate)}
-                                                            </TableCell>
-                                                            <TableCell className="py-1 text-sm text-right">
-                                                                ${rate.amount}
-                                                            </TableCell>
-                                                            <TableCell className="py-1">
-                                                                <Button
-                                                                    type="button"
-                                                                    variant="ghost"
-                                                                    size="icon"
-                                                                    className="h-6 w-6 text-muted-foreground hover:text-destructive"
-                                                                    onClick={() => handleRemoveRate(rate.class_type_id)}
-                                                                >
-                                                                    <Trash2 className="h-3 w-3" />
-                                                                </Button>
-                                                            </TableCell>
-                                                        </TableRow>
+                                        <div className="flex gap-2 items-end">
+                                            <div className="flex-1 space-y-1">
+                                                <Label className="text-xs">Tipo de Clase</Label>
+                                                <select
+                                                    className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors"
+                                                    value={newRateType}
+                                                    onChange={(e) => setNewRateType(e.target.value)}
+                                                >
+                                                    <option value="">Seleccionar...</option>
+                                                    {classTypes.map(t => (
+                                                        <option key={t.id} value={t.id}>{t.name}</option>
                                                     ))}
-                                                </TableBody>
-                                            </Table>
+                                                </select>
+                                            </div>
+                                            <div className="w-24 space-y-1">
+                                                <Label className="text-xs">Monto</Label>
+                                                <Input
+                                                    type="number"
+                                                    className="h-9"
+                                                    value={newRateAmount}
+                                                    onChange={(e) => setNewRateAmount(e.target.value)}
+                                                />
+                                            </div>
+                                            <Button type="button" size="sm" onClick={handleAddRate} disabled={!newRateType || !newRateAmount}>
+                                                <Plus className="h-4 w-4" />
+                                            </Button>
                                         </div>
-                                    )}
-                                </div>
-                            )}
+
+                                        {rates.length > 0 && (
+                                            <div className="rounded-md border bg-background">
+                                                <Table>
+                                                    <TableHeader>
+                                                        <TableRow className="h-8 hover:bg-transparent">
+                                                            <TableHead className="h-8 text-xs">Tipo</TableHead>
+                                                            <TableHead className="h-8 text-xs text-right">Monto</TableHead>
+                                                            <TableHead className="h-8 w-[40px]"></TableHead>
+                                                        </TableRow>
+                                                    </TableHeader>
+                                                    <TableBody>
+                                                        {rates.map((rate) => (
+                                                            <TableRow key={rate.class_type_id} className="h-9">
+                                                                <TableCell className="py-1 text-sm font-medium">
+                                                                    {getTypeName(rate)}
+                                                                </TableCell>
+                                                                <TableCell className="py-1 text-sm text-right">
+                                                                    ${rate.amount}
+                                                                </TableCell>
+                                                                <TableCell className="py-1">
+                                                                    <Button
+                                                                        type="button"
+                                                                        variant="ghost"
+                                                                        size="icon"
+                                                                        className="h-6 w-6 text-muted-foreground hover:text-destructive"
+                                                                        onClick={() => handleRemoveRate(rate.class_type_id)}
+                                                                    >
+                                                                        <Trash2 className="h-3 w-3" />
+                                                                    </Button>
+                                                                </TableCell>
+                                                            </TableRow>
+                                                        ))}
+                                                    </TableBody>
+                                                </Table>
+                                            </div>
+                                        )}
+                                    </div>
+                            </div>
                         </div>
                     </div>
 
                     <div className="space-y-2">
                         <Label className="text-sm font-semibold text-primary">Contacto de Emergencia</Label>
-                        <div className="grid grid-cols-2 gap-4">
+                        <div className="grid grid-cols-2 gap-3">
                             <div className="space-y-2">
                                 <Label htmlFor="emergency_contact_name">Nombre</Label>
                                 <Input
@@ -359,7 +364,7 @@ export function CreateInstructorDialog() {
 
                     <div className="space-y-2">
                         <Label className="text-sm font-semibold text-primary">Licencia de Conducir</Label>
-                        <div className="grid grid-cols-2 gap-4">
+                        <div className="grid grid-cols-2 gap-3">
                             <div className="space-y-2">
                                 <Label htmlFor="license_number">Número</Label>
                                 <Input
@@ -381,25 +386,22 @@ export function CreateInstructorDialog() {
                         </div>
                     </div>
 
-
-
-                </div>
-                <DialogFooter>
-                    <Button
-                        type="button"
-                        variant="outline"
-                        onClick={() => setOpen(false)}
-                        disabled={loading}
-                    >
-                        Cancelar
-                    </Button>
-                    <Button type="submit" disabled={loading}>
-                        {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                        Crear Instructor
-                    </Button>
-                </DialogFooter>
-            </form>
-        </DialogContent>
+                    <DialogFooter>
+                        <Button
+                            type="button"
+                            variant="outline"
+                            onClick={() => setOpen(false)}
+                            disabled={loading}
+                        >
+                            Cancelar
+                        </Button>
+                        <Button type="submit" disabled={loading}>
+                            {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                            Crear Instructor
+                        </Button>
+                    </DialogFooter>
+                </form>
+            </DialogContent>
         </Dialog >
     );
 }
