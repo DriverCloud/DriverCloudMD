@@ -334,6 +334,7 @@ export function CreateInstructorDialog() {
                                             </div>
                                         )}
                                     </div>
+                                )}
                             </div>
                         </div>
                     </div>
