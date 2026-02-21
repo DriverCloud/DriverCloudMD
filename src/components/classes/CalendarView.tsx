@@ -401,6 +401,7 @@ export function CalendarView({ appointments, currentDate, view, resources, filte
                                                                         // Force pastel/light colors regardless
                                                                         if (app.status === 'completed') statusStyle = { bg: 'bg-green-50', border: 'border-green-200', text: 'text-green-800', indicator: 'bg-green-500' };
                                                                         if (app.status === 'cancelled') statusStyle = { bg: 'bg-red-50', border: 'border-red-200', text: 'text-red-800', indicator: 'bg-red-500' };
+                                                                        if (app.status === 'no_show') statusStyle = { bg: 'bg-orange-50', border: 'border-orange-200', text: 'text-orange-800', indicator: 'bg-orange-500' };
 
                                                                         return (
                                                                             <div
@@ -470,6 +471,7 @@ export function CalendarView({ appointments, currentDate, view, resources, filte
                                                 let statusStyle = vehicleColors;
                                                 if (app.status === 'completed') statusStyle = { bg: 'bg-green-50', border: 'border-green-200', text: 'text-green-800', indicator: 'bg-green-500' };
                                                 if (app.status === 'cancelled') statusStyle = { bg: 'bg-red-50', border: 'border-red-200', text: 'text-red-800', indicator: 'bg-red-500' };
+                                                if (app.status === 'no_show') statusStyle = { bg: 'bg-orange-50', border: 'border-orange-200', text: 'text-orange-800', indicator: 'bg-orange-500' };
 
                                                 let colIndex = 0;
                                                 subCols.forEach((col, i) => { if (col.includes(app)) colIndex = i; });
@@ -487,7 +489,7 @@ export function CalendarView({ appointments, currentDate, view, resources, filte
                                                                     statusStyle.bg,
                                                                     statusStyle.border,
                                                                     statusStyle.text,
-                                                                    app.status === 'cancelled' && "opacity-60 grayscale-[0.5]"
+                                                                    (app.status === 'cancelled' || app.status === 'no_show') && "opacity-60 grayscale-[0.5]"
                                                                 )}
                                                                 style={{
                                                                     top: `${topOffset}px`,
@@ -552,6 +554,16 @@ export function CalendarView({ appointments, currentDate, view, resources, filte
                                                                 Marcar Completado
                                                             </ContextMenuItem>
                                                             <ContextMenuItem
+                                                                disabled={app.status === 'no_show'}
+                                                                onClick={async () => {
+                                                                    await updateAppointmentStatus(app.id, 'no_show');
+                                                                    router.refresh();
+                                                                }}
+                                                            >
+                                                                <AlertCircle className="mr-2 h-4 w-4 text-orange-600" />
+                                                                Marcar Ausencia
+                                                            </ContextMenuItem>
+                                                            <ContextMenuItem
                                                                 disabled={app.status === 'cancelled'}
                                                                 onClick={async () => {
                                                                     if (confirm('¿Cancelar esta clase?')) {
@@ -581,6 +593,7 @@ export function CalendarView({ appointments, currentDate, view, resources, filte
                                         let finalColors = { bg: 'bg-gray-100', border: 'border-gray-200', text: 'text-gray-500' };
                                         if (app.status === 'completed') finalColors = { bg: 'bg-green-50', border: 'border-green-200', text: 'text-green-800' };
                                         if (app.status === 'cancelled') finalColors = { bg: 'bg-red-50', border: 'border-red-100', text: 'text-red-300' };
+                                        if (app.status === 'no_show') finalColors = { bg: 'bg-orange-50', border: 'border-orange-200', text: 'text-orange-800' };
 
                                         return (
                                             <div
@@ -590,7 +603,7 @@ export function CalendarView({ appointments, currentDate, view, resources, filte
                                                     finalColors.bg,
                                                     finalColors.border,
                                                     finalColors.text,
-                                                    app.status === 'cancelled' && "line-through"
+                                                    (app.status === 'cancelled' || app.status === 'no_show') && "opacity-40"
                                                 )}
                                                 style={{
                                                     top: `${topOffset}px`,

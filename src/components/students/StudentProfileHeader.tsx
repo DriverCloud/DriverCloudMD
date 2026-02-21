@@ -16,6 +16,9 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { Label } from "@/components/ui/label";
 
+import { cancelFutureAppointments } from '@/app/(auth)/dashboard/classes/actions';
+import { XCircle as XCircleIcon } from 'lucide-react';
+
 interface StudentProfileHeaderProps {
     student: any;
     balance: any;
@@ -173,6 +176,42 @@ export function StudentProfileHeader({ student, balance, userRole, resources, pa
                                 )}
                                 <EditStudentDialog student={student} />
                                 <SellPackageDialog studentId={student.id} studentName={`${student.first_name} ${student.last_name}`} />
+
+                                {!isInstructor && (
+                                    <Dialog>
+                                        <DialogTrigger asChild>
+                                            <Button variant="outline" size="sm" className="text-red-600 hover:text-red-700 hover:bg-red-50">
+                                                <XCircleIcon className="mr-2 h-4 w-4" />
+                                                Cancelar Turnos Futuros
+                                            </Button>
+                                        </DialogTrigger>
+                                        <DialogContent>
+                                            <DialogHeader>
+                                                <DialogTitle>¿Confirmar cancelación masiva?</DialogTitle>
+                                                <DialogDescription>
+                                                    Esta acción cancelará todos los turnos futuros del alumno y **devolverá los créditos correspondientes**. Úsalo si el alumno decide no continuar con el curso.
+                                                </DialogDescription>
+                                            </DialogHeader>
+                                            <DialogFooter>
+                                                <Button variant="outline" onClick={() => { }}>Volver</Button>
+                                                <Button
+                                                    variant="destructive"
+                                                    onClick={async () => {
+                                                        const res = await cancelFutureAppointments(student.id);
+                                                        if (res.success) {
+                                                            toast.success(res.message);
+                                                            router.refresh();
+                                                        } else {
+                                                            toast.error(res.error || "Error al cancelar turnos");
+                                                        }
+                                                    }}
+                                                >
+                                                    Confirmar Cancelación
+                                                </Button>
+                                            </DialogFooter>
+                                        </DialogContent>
+                                    </Dialog>
+                                )}
                             </div>
                         </div>
                     </div>

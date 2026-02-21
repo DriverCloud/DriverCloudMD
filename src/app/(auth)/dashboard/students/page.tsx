@@ -105,13 +105,13 @@ export default async function StudentsPage({
         failed: 'Reprobado',
         abandoned: 'Abandono',
         all: 'Todos',
-        debtors: 'Con Deuda',
+        debtors: 'Saldos Pendientes',
         inactive: 'Inactivo' // Legacy support
     };
 
     const filters = [
         { id: 'active', label: 'Activos', icon: User, color: 'text-emerald-500', bg: 'bg-emerald-500' },
-        { id: 'debtors', label: 'Deudores', icon: CreditCard, color: 'text-rose-500', bg: 'bg-rose-500' },
+        { id: 'debtors', label: 'Saldos Pendientes', icon: CreditCard, color: 'text-rose-500', bg: 'bg-rose-500' },
         { id: 'paused', label: 'En Pausa', icon: PauseCircle, color: 'text-amber-500', bg: 'bg-amber-500' },
         { id: 'finished', label: 'Finalizados', icon: CheckCircle, color: 'text-blue-500', bg: 'bg-blue-500' },
         { id: 'graduated', label: 'Graduados', icon: Award, color: 'text-indigo-500', bg: 'bg-indigo-500' },

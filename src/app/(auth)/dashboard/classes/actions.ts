@@ -608,6 +608,53 @@ export async function updateAppointmentStatus(appointmentId: string, status: str
     return { success: true, data };
 }
 
+export async function cancelFutureAppointments(studentId: string) {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return { success: false, error: 'No autenticado' };
+
+    const today = new Date().toISOString().split('T')[0];
+    const nowTime = new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+
+    // Find future scheduled appointments
+    const { data: futureApps, error: fetchError } = await supabase
+        .from('appointments')
+        .select('id, scheduled_date, start_time')
+        .eq('student_id', studentId)
+        .eq('status', 'scheduled')
+        .or(`scheduled_date.gt.${today},and(scheduled_date.eq.${today},start_time.gt.${nowTime})`);
+
+    if (fetchError) {
+        console.error('Error fetching future appointments:', fetchError);
+        return { success: false, error: 'Error al buscar turnos futuros' };
+    }
+
+    if (!futureApps || futureApps.length === 0) {
+        return { success: true, message: 'No hay turnos futuros para cancelar' };
+    }
+
+    // Refund credits for each future appointment and mark as cancelled
+    // We do this in a loop to handle credits correctly
+    let successCount = 0;
+    for (const app of futureApps) {
+        await refundCredits(supabase, app.id);
+        const { error } = await supabase
+            .from('appointments')
+            .update({ status: 'cancelled' })
+            .eq('id', app.id);
+
+        if (!error) successCount++;
+    }
+
+    revalidatePath('/dashboard/classes');
+    revalidatePath(`/dashboard/students/${studentId}`);
+
+    return {
+        success: true,
+        message: `Se cancelaron ${successCount} turnos futuros y los créditos fueron devueltos.`
+    };
+}
+
 export async function searchClasses(query: string) {
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();

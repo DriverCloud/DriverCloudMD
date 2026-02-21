@@ -154,7 +154,8 @@ export function EditClassDialog({
                                         appointment.status === 'scheduled' ? "bg-blue-100 text-blue-800 hover:bg-blue-200" :
                                             appointment.status === 'completed' ? "bg-emerald-100 text-emerald-800 hover:bg-emerald-200" :
                                                 appointment.status === 'cancelled' ? "bg-red-100 text-red-800 hover:bg-red-200" :
-                                                    "bg-gray-100 text-gray-800"
+                                                    appointment.status === 'no_show' ? "bg-orange-100 text-orange-800 hover:bg-orange-200" :
+                                                        "bg-gray-100 text-gray-800"
                                     )}>
                                         <SelectValue />
                                     </SelectTrigger>
@@ -162,6 +163,7 @@ export function EditClassDialog({
                                         <SelectItem value="scheduled">Agendado</SelectItem>
                                         <SelectItem value="completed">Completado</SelectItem>
                                         <SelectItem value="cancelled">Cancelado</SelectItem>
+                                        <SelectItem value="no_show">Ausencia (Sin Devolución)</SelectItem>
                                         <SelectItem value="rescheduled" disabled>Reprogramado</SelectItem>
                                     </SelectContent>
                                 </Select>
@@ -262,6 +264,7 @@ export function EditClassDialog({
                                         <SelectItem value="scheduled">Agendado</SelectItem>
                                         <SelectItem value="rescheduled" disabled={isInstructor}>Reprogramado</SelectItem>
                                         <SelectItem value="completed">Completado</SelectItem>
+                                        <SelectItem value="no_show">Ausencia</SelectItem>
                                         <SelectItem value="cancelled" disabled={isInstructor}>Cancelado</SelectItem>
                                     </SelectContent>
                                 </Select>

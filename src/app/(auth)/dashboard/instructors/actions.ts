@@ -45,6 +45,21 @@ export async function createInstructor(formData: FormData): Promise<ActionState>
     // Handle Rates
     const ratesJson = formData.get('rates') as string;
 
+    // Check if CUIL already exists for an active instructor in this school
+    if (cuil) {
+        const { data: existingInstructor } = await supabase
+            .from("instructors")
+            .select("id")
+            .eq("school_id", membership.school_id)
+            .eq("cuil", cuil)
+            .is("deleted_at", null)
+            .maybeSingle();
+
+        if (existingInstructor) {
+            return { success: false, error: 'Este CUIL ya está registrado para otro instructor activo' };
+        }
+    }
+
     // Validate required fields
     if (!firstName || !lastName) {
         return { success: false, error: 'Nombre y apellido son requeridos' };
@@ -140,6 +155,24 @@ export async function updateInstructor(instructorId: string, formData: FormData)
 
     // Handle Rates
     const ratesJson = formData.get('rates') as string;
+
+    // Check if CUIL already exists for another active instructor in this school
+    if (cuil) {
+        const { data: currentInstructor } = await supabase.from('instructors').select('school_id').eq('id', instructorId).single();
+
+        const { data: existingInstructor } = await supabase
+            .from("instructors")
+            .select("id")
+            .eq("school_id", currentInstructor?.school_id)
+            .eq("cuil", cuil)
+            .is("deleted_at", null)
+            .neq("id", instructorId)
+            .maybeSingle();
+
+        if (existingInstructor) {
+            return { success: false, error: 'Este CUIL ya está registrado para otro instructor activo' };
+        }
+    }
 
     // Validate required fields
     if (!firstName || !lastName) {

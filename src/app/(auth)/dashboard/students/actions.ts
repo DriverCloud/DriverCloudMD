@@ -26,6 +26,23 @@ export async function createStudent(formData: FormData): Promise<ActionState> {
         return { success: false, error: 'No se encontró la membresía del usuario' };
     }
 
+    const dni = formData.get("dni") as string;
+
+    // Check if DNI already exists for an active student in this school
+    if (dni) {
+        const { data: existingStudent } = await supabase
+            .from("students")
+            .select("id")
+            .eq("school_id", membership.school_id)
+            .eq("dni", dni)
+            .is("deleted_at", null)
+            .maybeSingle();
+
+        if (existingStudent) {
+            return { success: false, error: 'Este DNI ya está registrado para otro estudiante activo' };
+        }
+    }
+
     const data = {
         school_id: membership.school_id,
         owner_id: membership.owner_id,
@@ -34,7 +51,7 @@ export async function createStudent(formData: FormData): Promise<ActionState> {
         last_name: formData.get("last_name") as string,
         email: formData.get("email") as string,
         phone: formData.get("phone") as string,
-        dni: formData.get("dni") as string,
+        dni: dni,
         address: formData.get("address") as string,
         date_of_birth: formData.get("date_of_birth") ? new Date(formData.get("date_of_birth") as string).toISOString() : null,
         referral_source: formData.get("referral_source") as string,
@@ -61,12 +78,30 @@ export async function updateStudent(id: string, formData: FormData): Promise<Act
     const supabase = await createClient();
     // id is passed as argument now
 
+    const dni = formData.get("dni") as string;
+
+    // Check if DNI already exists for another active student in this school
+    if (dni) {
+        const { data: existingStudent } = await supabase
+            .from("students")
+            .select("id")
+            .eq("school_id", (await supabase.from('students').select('school_id').eq('id', id).single()).data?.school_id)
+            .eq("dni", dni)
+            .is("deleted_at", null)
+            .neq("id", id)
+            .maybeSingle();
+
+        if (existingStudent) {
+            return { success: false, error: 'Este DNI ya está registrado para otro estudiante activo' };
+        }
+    }
+
     const data = {
         first_name: formData.get("first_name") as string,
         last_name: formData.get("last_name") as string,
         email: formData.get("email") as string,
         phone: formData.get("phone") as string,
-        dni: formData.get("dni") as string,
+        dni: dni,
         address: formData.get("address") as string,
         date_of_birth: formData.get("date_of_birth") ? new Date(formData.get("date_of_birth") as string).toISOString() : null,
         referral_source: formData.get("referral_source") as string,
