@@ -419,8 +419,13 @@ export function CalendarView({ appointments, currentDate, view, resources, filte
                                                                                     {app.status === 'completed' && <CheckCircle className="w-3 h-3 text-green-600" />}
                                                                                     {app.status === 'cancelled' && <XCircle className="w-3 h-3 text-red-600" />}
                                                                                 </div>
-                                                                                <div className="flex justify-between mt-1 text-[10px] opacity-80">
+                                                                                <div className="flex justify-between mt-1 text-[10px] opacity-80 gap-2">
                                                                                     <span>{app.start_time.slice(0, 5)} - {app.vehicle?.brand}</span>
+                                                                                    {app.class_number && app.package?.total_credits && (
+                                                                                        <span className="font-bold flex-shrink-0">
+                                                                                            {app.class_number}/{app.package.total_credits} clases
+                                                                                        </span>
+                                                                                    )}
                                                                                 </div>
                                                                             </div>
                                                                         );
@@ -531,7 +536,7 @@ export function CalendarView({ appointments, currentDate, view, resources, filte
                                                                             {(app.class_type?.duration_minutes || 60) >= 85
                                                                                 ? `${app.class_number} y ${app.class_number + 1}`
                                                                                 : app.class_number}
-                                                                            /{app.package.total_credits}
+                                                                            /{app.package.total_credits} clases
                                                                         </div>
                                                                     )}
                                                                 </div>
@@ -612,7 +617,14 @@ export function CalendarView({ appointments, currentDate, view, resources, filte
                                                     height: `${duration}px`,
                                                 }}
                                             >
-                                                {app.student?.first_name} - {app.status}
+                                                <div className="truncate">
+                                                    {app.student?.first_name} - {app.status}
+                                                    {app.class_number && app.package?.total_credits && (
+                                                        <span className="ml-1 opacity-70">
+                                                            ({app.class_number}/{app.package.total_credits} clases)
+                                                        </span>
+                                                    )}
+                                                </div>
                                             </div>
                                         );
                                     })}

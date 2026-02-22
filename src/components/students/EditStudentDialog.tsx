@@ -19,27 +19,11 @@ import { useRouter } from 'next/navigation';
 import { Loader2, Pencil } from 'lucide-react';
 
 interface EditStudentDialogProps {
-    student: {
-        id: string;
-        first_name: string;
-        last_name: string;
-        email: string | null;
-        phone: string | null;
-        dni: string | null;
-        address: string | null;
-        date_of_birth: string | null;
-        referral_source: string | null;
-        has_license: boolean | null;
-        gender: string | null;
-        status: string | null;
-        disability_observation: string | null;
-        emergency_contact_name?: string | null;
-        emergency_contact_phone?: string | null;
-        emergency_contact_relation?: string | null;
-    };
+    student: any; // Keep it simple for now as it was using any-like structure before
+    trigger?: React.ReactNode;
 }
 
-export function EditStudentDialog({ student }: EditStudentDialogProps) {
+export function EditStudentDialog({ student, trigger }: EditStudentDialogProps) {
     const [open, setOpen] = useState(false);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -66,9 +50,11 @@ export function EditStudentDialog({ student }: EditStudentDialogProps) {
     return (
         <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
-                <Button variant="ghost" size="sm">
-                    <Pencil className="h-4 w-4" />
-                </Button>
+                {trigger || (
+                    <Button variant="ghost" size="sm">
+                        <Pencil className="h-4 w-4" />
+                    </Button>
+                )}
             </DialogTrigger>
             <DialogContent
                 className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto"

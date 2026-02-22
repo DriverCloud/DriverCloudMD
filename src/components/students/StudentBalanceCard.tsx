@@ -20,8 +20,10 @@ export function StudentBalanceCard({ balance }: StudentBalanceCardProps) {
                     <CreditCard className="h-4 w-4" />
                     <span className="font-medium">Cuenta Corriente</span>
                 </div>
-                <div className={cn("text-4xl font-bold",
-                    balance.balance < 0 ? "text-rose-600" : "text-emerald-600"
+                <div className={cn("text-4xl font-bold transition-colors",
+                    balance.balance < 0 ? "text-rose-600" :
+                        balance.balance > 0 ? "text-emerald-600" :
+                            "text-slate-900 dark:text-slate-100"
                 )}>
                     ${balance.balance.toLocaleString()}
                 </div>

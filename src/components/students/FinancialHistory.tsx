@@ -3,7 +3,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
-import { Package, DollarSign } from 'lucide-react';
+import { Package, DollarSign, History, ShoppingBag } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
@@ -26,25 +26,6 @@ export function FinancialHistory({ packages, payments, studentId }: FinancialHis
             <CardHeader>
                 <div className="flex justify-between items-center">
                     <CardTitle>Historial Financiero</CardTitle>
-                    {studentId && (
-                        <Dialog>
-                            <DialogTrigger asChild>
-                                <Button size="sm" className="bg-emerald-600 hover:bg-emerald-700 text-white">
-                                    <DollarSign className="mr-2 h-4 w-4" />
-                                    Registrar Pago
-                                </Button>
-                            </DialogTrigger>
-                            <DialogContent className="sm:max-w-[425px]">
-                                <DialogHeader>
-                                    <DialogTitle>Registrar Pago</DialogTitle>
-                                </DialogHeader>
-                                <PaymentModal
-                                    defaultStudentId={studentId}
-                                    onSuccess={() => window.location.reload()}
-                                />
-                            </DialogContent>
-                        </Dialog>
-                    )}
                 </div>
             </CardHeader>
             <CardContent>
@@ -98,8 +79,18 @@ export function FinancialHistory({ packages, payments, studentId }: FinancialHis
                                     ))}
                                     {packages.length === 0 && payments.length === 0 && (
                                         <tr>
-                                            <td colSpan={4} className="p-8 text-center text-muted-foreground">
-                                                Sin movimientos registrados
+                                            <td colSpan={4} className="p-16 text-center">
+                                                <div className="flex flex-col items-center justify-center space-y-3">
+                                                    <div className="h-12 w-12 rounded-full bg-emerald-50 flex items-center justify-center text-emerald-200">
+                                                        <History className="h-6 w-6" />
+                                                    </div>
+                                                    <div className="space-y-1 text-center">
+                                                        <p className="font-semibold text-slate-900">Sin movimientos financieros</p>
+                                                        <p className="text-sm text-slate-500 max-w-[300px] mx-auto">
+                                                            Aún no se han registrado cobros ni ventas de paquetes para este alumno.
+                                                        </p>
+                                                    </div>
+                                                </div>
                                             </td>
                                         </tr>
                                     )}
@@ -132,7 +123,17 @@ export function FinancialHistory({ packages, payments, studentId }: FinancialHis
                                 </div>
                             ))}
                             {packages.length === 0 && (
-                                <div className="col-span-2 text-center py-8 text-muted-foreground">No se han registrado compras de paquetes</div>
+                                <div className="col-span-2 py-12 flex flex-col items-center justify-center space-y-4 border-2 border-dashed rounded-xl border-slate-100">
+                                    <div className="h-12 w-12 rounded-full bg-slate-50 flex items-center justify-center text-slate-200">
+                                        <ShoppingBag className="h-6 w-6" />
+                                    </div>
+                                    <div className="text-center space-y-1">
+                                        <p className="font-semibold text-slate-900">No posee paquetes</p>
+                                        <p className="text-sm text-slate-500 max-w-[280px]">
+                                            El alumno no ha comprado ningún pack de clases todavía.
+                                        </p>
+                                    </div>
+                                </div>
                             )}
                         </div>
                     </TabsContent>

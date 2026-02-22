@@ -2,7 +2,7 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { FileText, Heart } from 'lucide-react';
+import { FileText, Heart, AlertCircle } from 'lucide-react';
 
 interface StudentPersonalInfoCardProps {
     student: any;
@@ -18,36 +18,40 @@ export function StudentPersonalInfoCard({ student }: StudentPersonalInfoCardProp
                 </CardTitle>
             </CardHeader>
             <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                     {/* Personal Info */}
-                    <div className="space-y-4">
-                        <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div className="space-y-6">
+                        <div className="grid grid-cols-2 gap-y-6 gap-x-4">
                             <div>
-                                <p className="text-slate-500 dark:text-slate-400 text-xs uppercase tracking-wider">DNI</p>
-                                <p className="font-medium">{student.dni || 'No registrado'}</p>
+                                <p className="text-slate-500 dark:text-slate-400 text-[10px] uppercase font-bold tracking-widest mb-1">DNI / Identificación</p>
+                                <p className="font-semibold text-slate-900 dark:text-slate-100">{student.dni || 'No registrado'}</p>
+                            </div>
+                            <div>
+                                <p className="text-slate-500 dark:text-slate-400 text-[10px] uppercase font-bold tracking-widest mb-1">Licencia de Conducir</p>
+                                <div className="mt-1">
+                                    {student.has_license ? (
+                                        <Badge className="bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100 transition-colors">SÍ POSEE</Badge>
+                                    ) : (
+                                        <Badge variant="outline" className="text-slate-400 border-slate-200 font-medium">NO POSEE</Badge>
+                                    )}
+                                </div>
                             </div>
                             <div className="col-span-2">
-                                <p className="text-slate-500 dark:text-slate-400 text-xs uppercase tracking-wider">Dirección</p>
-                                <p className="font-medium">{student.address || 'No registrada'}</p>
-                            </div>
-                            <div>
-                                <p className="text-slate-500 dark:text-slate-400 text-xs uppercase tracking-wider">¿Tiene Licencia?</p>
-                                <p className="font-medium">
-                                    {student.has_license ? (
-                                        <Badge variant="default" className="bg-emerald-600 hover:bg-emerald-700">SÍ</Badge>
-                                    ) : (
-                                        <Badge variant="outline">NO</Badge>
-                                    )}
-                                </p>
+                                <p className="text-slate-500 dark:text-slate-400 text-[10px] uppercase font-bold tracking-widest mb-1">Dirección de Residencia</p>
+                                <p className="font-semibold text-slate-900 dark:text-slate-100">{student.address || 'No registrada'}</p>
                             </div>
                         </div>
+
                         {student.disability_observation && (
-                            <div className="mt-2 bg-yellow-50 dark:bg-yellow-900/10 border border-yellow-200 dark:border-yellow-900/50 p-3 rounded-md">
-                                <p className="text-xs uppercase tracking-wider text-yellow-700 dark:text-yellow-500 font-semibold mb-1">
-                                    Observaciones / Incapacidad
-                                </p>
-                                <p className="text-sm text-yellow-800 dark:text-yellow-400">
-                                    {student.disability_observation}
+                            <div className="mt-4 bg-amber-50/50 dark:bg-amber-900/10 border-l-4 border-amber-400 p-4 rounded-r-lg shadow-sm">
+                                <div className="flex items-center gap-2 mb-1.5">
+                                    <AlertCircle className="h-4 w-4 text-amber-600" />
+                                    <p className="text-[10px] uppercase font-bold tracking-widest text-amber-700 dark:text-amber-500">
+                                        Observaciones y Salud
+                                    </p>
+                                </div>
+                                <p className="text-sm text-amber-900 dark:text-amber-200 leading-relaxed italic">
+                                    "{student.disability_observation}"
                                 </p>
                             </div>
                         )}

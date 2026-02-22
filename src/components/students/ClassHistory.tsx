@@ -2,6 +2,9 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Calendar, Plus } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import Link from 'next/link';
 
 import { EvaluationView } from '@/components/evaluations/EvaluationView';
 
@@ -82,8 +85,24 @@ export function ClassHistory({ appointments }: ClassHistoryProps) {
                             })}
                             {appointments.length === 0 && (
                                 <tr>
-                                    <td colSpan={7} className="p-8 text-center text-muted-foreground">
-                                        No hay clases registradas
+                                    <td colSpan={7} className="p-12 text-center">
+                                        <div className="flex flex-col items-center justify-center space-y-3">
+                                            <div className="h-12 w-12 rounded-full bg-slate-50 flex items-center justify-center">
+                                                <Calendar className="h-6 w-6 text-slate-300" />
+                                            </div>
+                                            <div className="space-y-1">
+                                                <p className="font-semibold text-slate-900">Sin clases agendadas</p>
+                                                <p className="text-sm text-slate-500 max-w-[250px] mx-auto">
+                                                    Este alumno aún no tiene turnos registrados en el sistema.
+                                                </p>
+                                            </div>
+                                            <Button asChild variant="outline" size="sm" className="mt-2">
+                                                <Link href={`/dashboard/classes?studentId=${appointments[0]?.student_id || ''}`}>
+                                                    <Plus className="h-4 w-4 mr-2" />
+                                                    Agendar Primera Clase
+                                                </Link>
+                                            </Button>
+                                        </div>
                                     </td>
                                 </tr>
                             )}

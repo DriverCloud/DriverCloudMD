@@ -15,6 +15,10 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { useState } from "react";
 import { toast } from "sonner";
 import { Label } from "@/components/ui/label";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { MoreHorizontal, Settings2, UserPlus, DollarSign, Wallet, ChevronDown, ShoppingBag, Pencil } from 'lucide-react';
+import { PaymentModal } from '@/features/finance/components/PaymentModal';
 
 import { cancelFutureAppointments } from '@/app/(auth)/dashboard/classes/actions';
 import { XCircle as XCircleIcon } from 'lucide-react';
@@ -59,63 +63,167 @@ export function StudentProfileHeader({ student, balance, userRole, resources, pa
     const progressPercentage = totalCredits > 0 ? (usedCredits / totalCredits) * 100 : 0;
 
     return (
-        <div className="space-y-4">
-            <Button variant="ghost" className="pl-0" onClick={() => router.back()}>
-                <ChevronLeft className="mr-2 h-4 w-4" />
-                Volver a Estudiantes
-            </Button>
+        <TooltipProvider>
+            <div className="space-y-4">
+                <Button variant="ghost" className="pl-0" onClick={() => router.back()}>
+                    <ChevronLeft className="mr-2 h-4 w-4" />
+                    Volver a Estudiantes
+                </Button>
 
-            {/* Main Info Card */}
-            <Card className="flex-1 w-full">
-                <CardContent className="p-6">
-                    <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
-                        {/* Left Side: Student Info */}
-                        <div>
-                            <h1 className="text-3xl font-bold tracking-tight mb-2">
-                                {student.first_name} {student.last_name}
-                            </h1>
-                            <div className="flex gap-2 mb-4">
-                                <Badge variant={student.status === 'active' ? 'default' : 'secondary'}>
-                                    {student.status === 'active' ? 'Activo' : student.status}
-                                </Badge>
+                {/* Main Info Card */}
+                <Card className="flex-1 w-full">
+                    <CardContent className="p-6">
+                        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+                            {/* Left Side: Student Info */}
+                            <div>
+                                <h1 className="text-3xl font-bold tracking-tight mb-2">
+                                    {student.first_name} {student.last_name}
+                                </h1>
+                                <div className="flex gap-2 mb-4">
+                                    <Badge variant={student.status === 'active' ? 'default' : 'secondary'}>
+                                        {student.status === 'active' ? 'Activo' : student.status}
+                                    </Badge>
+                                </div>
+                                <div className="space-y-2 text-sm text-muted-foreground">
+                                    <div className="flex items-center gap-2">
+                                        <Mail className="h-4 w-4" />
+                                        {student.email || 'Sin email'}
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <Phone className="h-4 w-4" />
+                                        {student.phone || 'Sin teléfono'}
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <Calendar className="h-4 w-4" />
+                                        Registrado: {new Date(student.created_at).toLocaleDateString()}
+                                    </div>
+                                </div>
                             </div>
-                            <div className="space-y-2 text-sm text-muted-foreground">
-                                <div className="flex items-center gap-2">
-                                    <Mail className="h-4 w-4" />
-                                    {student.email || 'Sin email'}
-                                </div>
-                                <div className="flex items-center gap-2">
-                                    <Phone className="h-4 w-4" />
-                                    {student.phone || 'Sin teléfono'}
-                                </div>
-                                <div className="flex items-center gap-2">
-                                    <Calendar className="h-4 w-4" />
-                                    Registrado: {new Date(student.created_at).toLocaleDateString()}
-                                </div>
-                            </div>
-                        </div>
 
-                        {/* Right Side: Actions */}
-                        <div className="flex flex-col gap-2 md:items-end w-full md:w-auto">
-                            <div className="flex flex-wrap gap-2 w-full md:w-auto">
-                                {/* Portal Access / Reset Button */}
-                                {!isInstructor && (
-                                    <Dialog open={inviteOpen} onOpenChange={setInviteOpen}>
-                                        <DialogTrigger asChild>
-                                            <Button variant={student.user_id ? "ghost" : "outline"} className={student.user_id ? "text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 gap-2" : "gap-2"}>
-                                                {student.user_id ? (
-                                                    <>
-                                                        <CheckCircle2 className="h-4 w-4" />
-                                                        Acceso Activo (Resetear)
-                                                    </>
-                                                ) : (
-                                                    <>
-                                                        <Mail className="h-4 w-4" />
-                                                        Invitar al Portal
-                                                    </>
-                                                )}
+                            {/* Right Side: Actions */}
+                            <div className="flex flex-col gap-3 md:items-end w-full md:w-auto">
+                                <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">
+
+                                    {/* Financial Actions Dropdown */}
+                                    <DropdownMenu>
+                                        <DropdownMenuTrigger asChild>
+                                            <Button variant="default" className="bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm gap-2 font-semibold">
+                                                <DollarSign className="h-4 w-4" />
+                                                Finanzas
+                                                <ChevronDown className="h-4 w-4 ml-1 opacity-70" />
                                             </Button>
-                                        </DialogTrigger>
+                                        </DropdownMenuTrigger>
+                                        <DropdownMenuContent align="end" className="w-56">
+                                            <Dialog>
+                                                <DialogTrigger asChild>
+                                                    <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="gap-2">
+                                                        <Wallet className="h-4 w-4 text-emerald-600" />
+                                                        Registrar Pago
+                                                    </DropdownMenuItem>
+                                                </DialogTrigger>
+                                                <DialogContent className="sm:max-w-[425px]">
+                                                    <DialogHeader>
+                                                        <DialogTitle>Registrar Pago</DialogTitle>
+                                                    </DialogHeader>
+                                                    <PaymentModal
+                                                        defaultStudentId={student.id}
+                                                        onSuccess={() => router.refresh()}
+                                                    />
+                                                </DialogContent>
+                                            </Dialog>
+
+                                            <DropdownMenuItem asChild>
+                                                <div className="w-full">
+                                                    <SellPackageDialog
+                                                        studentId={student.id}
+                                                        studentName={`${student.first_name} ${student.last_name}`}
+                                                        trigger={
+                                                            <div className="flex items-center gap-2 px-2 py-1.5 w-full cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 rounded-sm">
+                                                                <ShoppingBag className="h-4 w-4 text-emerald-600" />
+                                                                <span className="text-sm">Vender Paquete</span>
+                                                            </div>
+                                                        }
+                                                    />
+                                                </div>
+                                            </DropdownMenuItem>
+                                        </DropdownMenuContent>
+                                    </DropdownMenu>
+
+                                    {/* Dropdown for more actions */}
+                                    <DropdownMenu>
+                                        <DropdownMenuTrigger asChild>
+                                            <Button variant="outline" className="gap-2">
+                                                <Settings2 className="h-4 w-4" />
+                                                Gestión
+                                                <MoreHorizontal className="h-4 w-4 ml-1 opacity-50" />
+                                            </Button>
+                                        </DropdownMenuTrigger>
+                                        <DropdownMenuContent align="end" className="w-56">
+                                            <EditStudentDialog
+                                                student={student}
+                                                trigger={
+                                                    <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="gap-2 cursor-pointer">
+                                                        <Pencil className="h-4 w-4" />
+                                                        Editar Perfil
+                                                    </DropdownMenuItem>
+                                                }
+                                            />
+
+                                            {!isInstructor && (
+                                                <>
+                                                    <DropdownMenuItem
+                                                        onClick={() => setInviteOpen(true)}
+                                                        className="gap-2"
+                                                    >
+                                                        <Mail className="h-4 w-4" />
+                                                        {student.user_id ? "Resetear Acceso Portal" : "Invitar al Portal"}
+                                                    </DropdownMenuItem>
+
+                                                    <Dialog>
+                                                        <DialogTrigger asChild>
+                                                            <DropdownMenuItem
+                                                                className="text-red-600 focus:text-red-700 focus:bg-red-50 gap-2"
+                                                                onSelect={(e) => {
+                                                                    e.preventDefault(); // Prevent dropdown from closing immediately
+                                                                }}
+                                                            >
+                                                                <XCircleIcon className="h-4 w-4" />
+                                                                Cancelar Turnos Futuros
+                                                            </DropdownMenuItem>
+                                                        </DialogTrigger>
+                                                        <DialogContent>
+                                                            <DialogHeader>
+                                                                <DialogTitle>¿Confirmar cancelación masiva?</DialogTitle>
+                                                                <DialogDescription>
+                                                                    Esta acción cancelará todos los turnos futuros del alumno y **devolverá los créditos correspondientes**. Úsalo si el alumno decide no continuar con el curso.
+                                                                </DialogDescription>
+                                                            </DialogHeader>
+                                                            <DialogFooter>
+                                                                <Button variant="outline" onClick={() => { }}>Volver</Button>
+                                                                <Button
+                                                                    variant="destructive"
+                                                                    onClick={async () => {
+                                                                        const res = await cancelFutureAppointments(student.id);
+                                                                        if (res.success) {
+                                                                            toast.success(res.message);
+                                                                            router.refresh();
+                                                                        } else {
+                                                                            toast.error(res.error || "Error al cancelar turnos");
+                                                                        }
+                                                                    }}
+                                                                >
+                                                                    Confirmar Cancelación
+                                                                </Button>
+                                                            </DialogFooter>
+                                                        </DialogContent>
+                                                    </Dialog>
+                                                </>
+                                            )}
+                                        </DropdownMenuContent>
+                                    </DropdownMenu>
+
+                                    {/* Invitations (Portal Access) moved to dropdown logic, but we kept the dialog here for simplicity */}
+                                    <Dialog open={inviteOpen} onOpenChange={setInviteOpen}>
                                         <DialogContent onInteractOutside={(e) => e.preventDefault()}>
                                             <DialogHeader>
                                                 <DialogTitle>
@@ -164,76 +272,29 @@ export function StudentProfileHeader({ student, balance, userRole, resources, pa
                                             )}
                                         </DialogContent>
                                     </Dialog>
-                                )}
-
-                                {resources && (
-                                    <Button asChild variant="default" size="sm" className="bg-blue-600 hover:bg-blue-700 text-white">
-                                        <Link href={`/dashboard/classes?studentId=${student.id}`}>
-                                            <Calendar className="mr-2 h-4 w-4" />
-                                            Ver Calendario de Clases
-                                        </Link>
-                                    </Button>
-                                )}
-                                <EditStudentDialog student={student} />
-                                <SellPackageDialog studentId={student.id} studentName={`${student.first_name} ${student.last_name}`} />
-
-                                {!isInstructor && (
-                                    <Dialog>
-                                        <DialogTrigger asChild>
-                                            <Button variant="outline" size="sm" className="text-red-600 hover:text-red-700 hover:bg-red-50">
-                                                <XCircleIcon className="mr-2 h-4 w-4" />
-                                                Cancelar Turnos Futuros
-                                            </Button>
-                                        </DialogTrigger>
-                                        <DialogContent>
-                                            <DialogHeader>
-                                                <DialogTitle>¿Confirmar cancelación masiva?</DialogTitle>
-                                                <DialogDescription>
-                                                    Esta acción cancelará todos los turnos futuros del alumno y **devolverá los créditos correspondientes**. Úsalo si el alumno decide no continuar con el curso.
-                                                </DialogDescription>
-                                            </DialogHeader>
-                                            <DialogFooter>
-                                                <Button variant="outline" onClick={() => { }}>Volver</Button>
-                                                <Button
-                                                    variant="destructive"
-                                                    onClick={async () => {
-                                                        const res = await cancelFutureAppointments(student.id);
-                                                        if (res.success) {
-                                                            toast.success(res.message);
-                                                            router.refresh();
-                                                        } else {
-                                                            toast.error(res.error || "Error al cancelar turnos");
-                                                        }
-                                                    }}
-                                                >
-                                                    Confirmar Cancelación
-                                                </Button>
-                                            </DialogFooter>
-                                        </DialogContent>
-                                    </Dialog>
-                                )}
+                                </div>
                             </div>
                         </div>
-                    </div>
 
-                    {/* Upselling Progress Bar */}
-                    {totalCredits > 0 && (
-                        <div className="mt-6 border-t pt-4">
-                            <div className="flex justify-between text-sm mb-1">
-                                <span className="font-medium text-muted-foreground">Progreso del Curso</span>
-                                <span className="font-bold text-primary">{usedCredits} / {totalCredits} Clases Completadas</span>
+                        {/* Upselling Progress Bar */}
+                        {totalCredits > 0 && (
+                            <div className="mt-6 border-t pt-4">
+                                <div className="flex justify-between text-sm mb-1">
+                                    <span className="font-medium text-muted-foreground">Progreso del Curso</span>
+                                    <span className="font-bold text-primary">{usedCredits} / {totalCredits} Clases Completadas</span>
+                                </div>
+                                <Progress value={progressPercentage} className="h-2.5" />
+                                {usedCredits >= totalCredits && (
+                                    <p className="text-xs text-amber-600 mt-1 font-medium">
+                                        ¡Curso completado! Sugiere un paquete de refuerzo o trámite de licencia.
+                                    </p>
+                                )}
                             </div>
-                            <Progress value={progressPercentage} className="h-2.5" />
-                            {usedCredits >= totalCredits && (
-                                <p className="text-xs text-amber-600 mt-1 font-medium">
-                                    ¡Curso completado! Sugiere un paquete de refuerzo o trámite de licencia.
-                                </p>
-                            )}
-                        </div>
-                    )}
+                        )}
 
-                </CardContent>
-            </Card>
-        </div>
+                    </CardContent>
+                </Card>
+            </div>
+        </TooltipProvider>
     );
 }
