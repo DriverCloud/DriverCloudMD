@@ -9,7 +9,7 @@ import { VehicleEfficiencyChart } from './VehicleEfficiencyChart'
 import { HeatmapChart } from './HeatmapChart'
 import { ExpenseBreakdownChart } from './ExpenseBreakdownChart'
 import { DashboardCustomizer, useDashboardConfig } from './DashboardCustomizer'
-import { BarChart3, TrendingUp, Users, Calendar, Wallet, PieChart as PieChartIcon, TrendingDown, Star, Car, Activity, CheckCircle, Clock, Banknote } from 'lucide-react'
+import { BarChart3, TrendingUp, Users, Calendar, Wallet, PieChart as PieChartIcon, TrendingDown, Star, Car, Activity, CheckCircle, Clock, Banknote, UserPlus, RotateCw } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 interface DashboardContentProps {
@@ -93,19 +93,42 @@ export function DashboardContent({ data }: DashboardContentProps) {
 
             {/* Advanced KPI Cards */}
             {config.showAdvancedKPIs && (
-                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
                     <div className="rounded-xl border bg-card p-6 shadow-sm">
                         <div className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <h3 className="text-sm font-medium text-muted-foreground">Tasa de Aprobación Estimate</h3>
+                            <h3 className="text-sm font-medium text-muted-foreground">Nuevos Alumnos</h3>
+                            <UserPlus className="h-4 w-4 text-primary" />
+                        </div>
+                        <div className="text-2xl font-bold">
+                            {kpiData.newStudents}
+                        </div>
+                        <p className="text-xs text-muted-foreground mt-1">
+                            Registros en el período
+                        </p>
+                    </div>
+
+                    <div className="rounded-xl border bg-card p-6 shadow-sm">
+                        <div className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <h3 className="text-sm font-medium text-muted-foreground">Renovaciones</h3>
+                            <RotateCw className="h-4 w-4 text-primary" />
+                        </div>
+                        <div className="text-2xl font-bold">
+                            {kpiData.renewals}
+                        </div>
+                        <p className="text-xs text-muted-foreground mt-1">
+                            Alumnos que compraron otro pack
+                        </p>
+                    </div>
+
+                    <div className="rounded-xl border bg-card p-6 shadow-sm">
+                        <div className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <h3 className="text-sm font-medium text-muted-foreground">Tasa de Aprobación</h3>
                             <CheckCircle className="h-4 w-4 text-primary" />
                         </div>
                         <div className="flex items-end gap-2">
                             <div className="text-2xl font-bold">
                                 {kpiData.approvalRate.toFixed(1)}%
                             </div>
-                            <p className="text-xs text-muted-foreground mb-1">
-                                {kpiData.totalGraduated} Graduados / {kpiData.totalGraduated + kpiData.totalFailed} Finalizados
-                            </p>
                         </div>
                     </div>
 
@@ -117,22 +140,16 @@ export function DashboardContent({ data }: DashboardContentProps) {
                         <div className="text-2xl font-bold">
                             ${Math.round(kpiData.ltv).toLocaleString()}
                         </div>
-                        <p className="text-xs text-muted-foreground mt-1">
-                            Promedio histórico de ingresos por alumno
-                        </p>
                     </div>
 
                     <div className="rounded-xl border bg-card p-6 shadow-sm">
                         <div className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <h3 className="text-sm font-medium text-muted-foreground">Ocupación Estimada</h3>
+                            <h3 className="text-sm font-medium text-muted-foreground">Ocupación</h3>
                             <Activity className="h-4 w-4 text-primary" />
                         </div>
                         <div className="text-2xl font-bold">
                             {kpiData.occupancyRate.toFixed(1)}%
                         </div>
-                        <p className="text-xs text-muted-foreground mt-1">
-                            Basado en capacidad teórica vs clases reales
-                        </p>
                     </div>
                 </div>
             )}

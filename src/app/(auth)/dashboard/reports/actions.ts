@@ -387,6 +387,56 @@ export async function getKPIData(filters?: ReportFilters) {
     const capacity = (instructorCount || 1) * 6 * daysDiff
     const occupancyRate = capacity > 0 ? ((classCount || 0) / capacity) * 100 : 0
 
+    // 4. New Students (Count of students created in the period)
+    let newStudentsQuery = supabase.from('students').select('id', { count: 'exact', head: true }).is('deleted_at', null)
+    if (filters?.locationId) newStudentsQuery = newStudentsQuery.eq('location_id', filters.locationId)
+    if (filters?.startDate) newStudentsQuery = newStudentsQuery.gte('created_at', filters.startDate)
+    if (filters?.endDate) newStudentsQuery = newStudentsQuery.lte('created_at', filters.endDate + 'T23:59:59')
+
+    const { count: newStudentsCount } = await newStudentsQuery
+
+    // 5. Renewals (Count of student_packages purchased in the period that are NOT the first one for that student)
+    // First, get all packages in the period
+    let packagesInPeriodQuery = supabase.from('student_packages')
+        .select('id, student_id, created_at')
+
+    if (filters?.startDate) packagesInPeriodQuery = packagesInPeriodQuery.gte('created_at', filters.startDate)
+    if (filters?.endDate) packagesInPeriodQuery = packagesInPeriodQuery.lte('created_at', filters.endDate + 'T23:59:59')
+
+    const { data: periodPackages } = await packagesInPeriodQuery
+
+    let renewalsCount = 0
+    if (periodPackages && periodPackages.length > 0) {
+        // For each student who bought a package in the period, check if they had any package before that
+        const studentIds = [...new Set(periodPackages.map(p => p.student_id))]
+
+        // This is a bit heavy but accurate. Fetch all packages for these students.
+        const { data: allPackagesForStudents } = await supabase.from('student_packages')
+            .select('student_id, created_at')
+            .in('student_id', studentIds)
+            .order('created_at', { ascending: true })
+
+        if (allPackagesForStudents) {
+            // Group by student
+            const studentPackageTimeline: Record<string, string[]> = {}
+            allPackagesForStudents.forEach(p => {
+                if (!studentPackageTimeline[p.student_id]) studentPackageTimeline[p.student_id] = []
+                studentPackageTimeline[p.student_id].push(p.created_at)
+            })
+
+            // Count as renewal if any package in the period is NOT the first in the timeline for that student
+            periodPackages.forEach(p => {
+                const timeline = studentPackageTimeline[p.student_id]
+                if (timeline && timeline.length > 0) {
+                    // If this package's created_at is NOT the minimum one in the timeline, it's a renewal
+                    if (p.created_at !== timeline[0]) {
+                        renewalsCount++
+                    }
+                }
+            })
+        }
+    }
+
     return {
         success: true,
         data: {
@@ -394,7 +444,9 @@ export async function getKPIData(filters?: ReportFilters) {
             ltv,
             occupancyRate,
             totalGraduated: graduated,
-            totalFailed: failed
+            totalFailed: failed,
+            newStudents: newStudentsCount || 0,
+            renewals: renewalsCount
         }
     }
 }

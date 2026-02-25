@@ -142,7 +142,7 @@ export default async function VehiclesPage() {
                                     {/* Data Density Addition */}
                                     <div className="flex justify-between items-center text-sm">
                                         <span className="text-muted-foreground">Kilometraje</span>
-                                        <span className="font-medium">{vehicle.current_mileage ? `${vehicle.current_mileage.toLocaleString()} km` : 'N/A'}</span>
+                                        <span className="font-medium">{vehicle.odometer ? `${Number(vehicle.odometer).toLocaleString()} km` : '0 km'}</span>
                                     </div>
 
                                     <div className="flex justify-between items-center text-sm">
