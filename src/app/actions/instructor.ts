@@ -14,7 +14,35 @@ export async function completeClass(appointmentId: string, mileage: number, note
     }
     console.log(`completeClass: User ${user.id} attempting to complete appointment ${appointmentId}`);
 
-    // 2. Update Appointment
+    // 2. Fetch the appointment to get the vehicle_id
+    const { data: appointment, error: fetchError } = await supabase
+        .from('appointments')
+        .select('vehicle_id')
+        .eq('id', appointmentId)
+        .single();
+
+    if (fetchError || !appointment?.vehicle_id) {
+        return { success: false, error: "No se pudo encontrar la información del vehículo." };
+    }
+
+    // 3. Fetch the vehicle's current odometer
+    const { data: vehicle, error: vehicleError } = await supabase
+        .from('vehicles')
+        .select('odometer')
+        .eq('id', appointment.vehicle_id)
+        .single();
+
+    if (vehicleError) {
+        return { success: false, error: "No se pudo verificar el kilometraje del vehículo." };
+    }
+
+    // 4. Validate mileage
+    const currentOdometer = vehicle?.odometer ? Number(vehicle.odometer) : 0;
+    if (mileage < currentOdometer) {
+        return { success: false, error: `El kilometraje ingresado (${mileage.toLocaleString()} km) no puede ser menor al actual del vehículo (${currentOdometer.toLocaleString()} km).` };
+    }
+
+    // 5. Update Appointment
     const { error: appError } = await supabase
         .from('appointments')
         .update({

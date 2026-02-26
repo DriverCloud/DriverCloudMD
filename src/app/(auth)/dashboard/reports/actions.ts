@@ -227,11 +227,12 @@ export async function getInstructorRatings(filters?: ReportFilters) {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return { success: false, error: 'No autenticado' }
 
-    let query = supabase.from('class_evaluations')
-        .select('rating, instructor:instructors(first_name, last_name)')
+    let query = supabase.from('appointments')
+        .select('student_rating, instructor:instructors(first_name, last_name)')
+        .not('student_rating', 'is', null)
 
-    if (filters?.startDate) query = query.gte('created_at', filters.startDate)
-    if (filters?.endDate) query = query.lte('created_at', filters.endDate + 'T23:59:59')
+    if (filters?.startDate) query = query.gte('scheduled_date', filters.startDate)
+    if (filters?.endDate) query = query.lte('scheduled_date', filters.endDate + 'T23:59:59')
 
     const { data: evaluations } = await query
 
@@ -239,11 +240,11 @@ export async function getInstructorRatings(filters?: ReportFilters) {
     evaluations?.forEach(evalItem => {
         const inst: any = evalItem.instructor
         const instructor = Array.isArray(inst) ? inst[0] : inst
-        if (!instructor) return
+        if (!instructor || !evalItem.student_rating) return
 
         const name = `${instructor.first_name} ${instructor.last_name}`
         if (!ratings[name]) ratings[name] = { total: 0, count: 0 }
-        ratings[name].total += evalItem.rating
+        ratings[name].total += evalItem.student_rating
         ratings[name].count++
     })
 

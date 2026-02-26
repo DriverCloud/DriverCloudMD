@@ -84,6 +84,7 @@ export async function updateVehicle(vehicleId: string, formData: FormData) {
     const licensePlate = formData.get('license_plate') as string;
     const transmissionType = formData.get('transmission_type') as string;
     const status = formData.get('status') as string;
+    const odometer = formData.get('odometer') as string;
 
     // Validate required fields
     if (!brand || !model || !year || !licensePlate || !transmissionType) {
@@ -100,6 +101,7 @@ export async function updateVehicle(vehicleId: string, formData: FormData) {
             license_plate: licensePlate,
             transmission_type: transmissionType,
             status: status || undefined,
+            odometer: odometer ? parseFloat(odometer) : undefined,
         })
         .eq('id', vehicleId)
         .select()

@@ -21,7 +21,7 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { useRouter } from 'next/navigation';
-import { Loader2, Trash2, Calendar as CalendarIcon, Clock, User, Car, Edit } from 'lucide-react';
+import { Loader2, Trash2, Calendar as CalendarIcon, Clock, User, Car, Edit, Star } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { updateAppointment, cancelAppointment, updateAppointmentStatus } from '@/app/(auth)/dashboard/classes/actions';
@@ -379,8 +379,29 @@ export function EditClassDialog({
                                         </p>
                                     </div>
                                 )}
+
+                                {appointment.student_rating && (
+                                    <div className="bg-slate-50 border p-3 rounded-lg text-sm">
+                                        <div className="flex items-center gap-2 mb-1">
+                                            <Star className="h-4 w-4 text-amber-500 fill-amber-500" />
+                                            <span className="font-bold text-slate-700 text-xs uppercase">Calificación del Alumno</span>
+                                        </div>
+                                        <div className="flex items-center gap-1 pl-6 mt-1">
+                                            {[1, 2, 3, 4, 5].map(star => (
+                                                <Star
+                                                    key={star}
+                                                    className={cn("h-4 w-4", appointment.student_rating >= star ? "text-amber-400 fill-amber-400" : "text-slate-200")}
+                                                />
+                                            ))}
+                                            <span className="ml-2 text-xs font-medium text-muted-foreground">
+                                                ({appointment.student_rating}/5)
+                                            </span>
+                                        </div>
+                                    </div>
+                                )}
                             </div>
                         </>
+
                     )}
                 </form>
 

@@ -111,7 +111,7 @@ export default async function VehicleDetailPage({ params }: { params: Promise<{ 
                     </CardHeader>
                     <CardContent>
                         <div className="text-2xl font-bold text-emerald-700">
-                            {vehicle.current_mileage ? `${vehicle.current_mileage.toLocaleString()} km` : '0 km'}
+                            {vehicle.odometer ? `${Number(vehicle.odometer).toLocaleString()} km` : '0 km'}
                         </div>
                         <p className="text-xs text-muted-foreground mt-1">
                             Actualizado automáticamente
@@ -204,7 +204,7 @@ export default async function VehicleDetailPage({ params }: { params: Promise<{ 
                         <div className="lg:col-span-1">
                             <MaintenanceScheduleManager
                                 vehicleId={id}
-                                currentMileage={vehicle.current_mileage || 0}
+                                currentMileage={Number(vehicle.odometer) || 0}
                                 schedules={schedules || []}
                             />
                         </div>

@@ -33,6 +33,7 @@ interface EditVehicleDialogProps {
         license_plate: string;
         transmission_type: string;
         status: string;
+        odometer?: number | null;
     };
     trigger?: React.ReactNode;
 }
@@ -139,6 +140,17 @@ export function EditVehicleDialog({ vehicle, trigger }: EditVehicleDialogProps) 
                         </div>
 
                         <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <Label htmlFor="odometer">Kilometraje Actual</Label>
+                                <Input
+                                    id="odometer"
+                                    name="odometer"
+                                    type="number"
+                                    defaultValue={vehicle.odometer || ''}
+                                    min="0"
+                                    disabled={loading}
+                                />
+                            </div>
                             <div className="space-y-2">
                                 <Label htmlFor="transmission_type">Tipo de Transmisión *</Label>
                                 <Select
