@@ -132,7 +132,7 @@ export function StudentProfileHeader({ student, balance, userRole, resources, pa
                                                 </DialogContent>
                                             </Dialog>
 
-                                            <DropdownMenuItem asChild>
+                                            <DropdownMenuItem onSelect={(e) => e.preventDefault()} asChild>
                                                 <div className="w-full">
                                                     <SellPackageDialog
                                                         studentId={student.id}

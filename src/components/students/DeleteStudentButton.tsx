@@ -16,6 +16,7 @@ import {
 import { deleteStudent } from '@/app/(auth)/dashboard/students/actions';
 import { useRouter } from 'next/navigation';
 import { Trash2, Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
 
 interface DeleteStudentButtonProps {
     studentId: string;
@@ -33,10 +34,11 @@ export function DeleteStudentButton({ studentId, studentName }: DeleteStudentBut
         const result = await deleteStudent(studentId);
 
         if (result.success) {
+            toast.success('Estudiante eliminado', { description: 'El estudiante se ha movido a la papelera.' });
             setOpen(false);
             router.refresh();
         } else {
-            alert(result.error || 'Error al eliminar el estudiante');
+            toast.error('Error', { description: result.error || 'No se pudo eliminar el estudiante.' });
         }
 
         setLoading(false);

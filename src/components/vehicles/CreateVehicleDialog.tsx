@@ -23,6 +23,7 @@ import {
 import { createVehicle } from '@/app/(auth)/dashboard/vehicles/actions';
 import { useRouter } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
 
 export function CreateVehicleDialog() {
     const [open, setOpen] = useState(false);
@@ -42,12 +43,14 @@ export function CreateVehicleDialog() {
         const result = await createVehicle(formData);
 
         if (result.success) {
+            toast.success('Vehículo creado', { description: 'El vehículo se ha registrado correctamente.' });
             setOpen(false);
             router.refresh();
             // Reset form
             (e.target as HTMLFormElement).reset();
             setTransmissionType('');
         } else {
+            toast.error('Error', { description: result.error || 'No se pudo crear el vehículo' });
             setError(result.error || 'Error desconocido');
         }
 
@@ -172,7 +175,7 @@ export function CreateVehicleDialog() {
                         >
                             Cancelar
                         </Button>
-                        <Button type="submit" disabled={loading || !transmissionType}>
+                        <Button type="submit" disabled={loading}>
                             {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                             Crear Vehículo
                         </Button>

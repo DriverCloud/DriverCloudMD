@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { paymentsService, Payment } from "@/features/finance/services/payments.service";
-import { Calendar, User } from "lucide-react";
+import { Calendar, User, SearchX, Receipt } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 
 
@@ -86,12 +86,16 @@ export function RecentActivity() {
                         {loadingClasses ? (
                             <p className="text-sm text-muted-foreground text-center py-4">Cargando...</p>
                         ) : classes.length === 0 ? (
-                            <p className="text-sm text-muted-foreground text-center py-4">
-                                No hay clases programadas para hoy.
-                            </p>
+                            <div className="flex flex-col items-center justify-center py-8 text-center">
+                                <SearchX className="h-10 w-10 text-muted-foreground/50 mb-3" />
+                                <p className="text-sm font-medium text-foreground">Sin clases hoy</p>
+                                <p className="text-xs text-muted-foreground mt-1">
+                                    No hay clases programadas para esta fecha.
+                                </p>
+                            </div>
                         ) : (
                             classes.map((clase) => (
-                                <div key={clase.id} className="flex items-center justify-between border-b pb-4 last:border-0 last:pb-0">
+                                <div key={clase.id} className="flex items-center justify-between border-b py-3 hover:bg-muted/50 transition-colors rounded-md px-2 -mx-2 last:border-0">
                                     <div className="flex items-center gap-4">
                                         <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/10">
                                             <Calendar className="h-4 w-4 text-primary" />
@@ -119,12 +123,16 @@ export function RecentActivity() {
                 <CardContent>
                     <div className="space-y-4">
                         {payments.length === 0 ? (
-                            <p className="text-sm text-muted-foreground text-center py-4">
-                                No hay pagos recientes.
-                            </p>
+                            <div className="flex flex-col items-center justify-center py-8 text-center">
+                                <Receipt className="h-10 w-10 text-muted-foreground/50 mb-3" />
+                                <p className="text-sm font-medium text-foreground">Sin pagos</p>
+                                <p className="text-xs text-muted-foreground mt-1">
+                                    No hay pagos recientes registrados.
+                                </p>
+                            </div>
                         ) : (
                             payments.slice(0, 3).map((payment) => (
-                                <div key={payment.id} className="flex items-center justify-between border-b pb-4 last:border-0 last:pb-0">
+                                <div key={payment.id} className="flex items-center justify-between border-b py-3 hover:bg-muted/50 transition-colors rounded-md px-2 -mx-2 last:border-0">
                                     <div className="flex items-center gap-4">
                                         <Avatar className="h-9 w-9">
                                             <AvatarFallback>

@@ -62,6 +62,14 @@ export default function StudentDashboardPage() {
                     const completed = appts.filter(c => c.status === 'completed' || c.status === 'rated').length;
                     const total = 10; // Logic for total package credits could be fetched here
                     setStats({ completed, total });
+
+                    // Phase 3 UX: Intercept student with unrated classes
+                    const unratedClass = appts.find(c => c.status === 'completed' && !c.student_rating);
+                    if (unratedClass) {
+                        setClassToRate(unratedClass);
+                        setRatingValue(0); // Ensure fresh rating
+                        setRatingModalOpen(true);
+                    }
                 }
             }
             setLoading(false);
@@ -171,19 +179,19 @@ export default function StudentDashboardPage() {
                     <div className="pt-4 mt-2 border-t border-white/10">
                         <p className="text-xs font-medium text-emerald-100 mb-3 uppercase tracking-wider">Logros Desbloqueados</p>
                         <div className="flex gap-3 overflow-x-auto pb-2 -mx-2 px-2 snap-x">
-                            <div className={cn("shrink-0 snap-center flex flex-col items-center justify-center w-20 h-24 rounded-xl border-2 transition-all", stats.completed >= 1 ? "bg-amber-100 border-amber-300 shadow-[0_0_15px_rgba(252,211,77,0.3)] shadow-inner" : "bg-white/5 border-white/10 grayscale opacity-50")}>
+                            <div className={cn("shrink-0 snap-center flex flex-col items-center justify-center w-20 h-24 rounded-xl border-2 transition-all hover:-translate-y-1 hover:shadow-lg cursor-default", stats.completed >= 1 ? "bg-amber-100 border-amber-300 shadow-[0_0_15px_rgba(252,211,77,0.3)] shadow-inner" : "bg-white/5 border-white/10 grayscale opacity-50")}>
                                 <div className={cn("p-2 rounded-full mb-1", stats.completed >= 1 ? "bg-amber-50 text-amber-500" : "bg-white/10 text-white")}>
                                     <Activity className="h-5 w-5" />
                                 </div>
                                 <span className={cn("text-[10px] font-bold text-center leading-tight", stats.completed >= 1 ? "text-amber-700" : "text-emerald-100")}>Primeros<br />Pasos</span>
                             </div>
-                            <div className={cn("shrink-0 snap-center flex flex-col items-center justify-center w-20 h-24 rounded-xl border-2 transition-all", stats.completed >= 5 ? "bg-amber-100 border-amber-300 shadow-[0_0_15px_rgba(252,211,77,0.3)] shadow-inner" : "bg-white/5 border-white/10 grayscale opacity-50")}>
+                            <div className={cn("shrink-0 snap-center flex flex-col items-center justify-center w-20 h-24 rounded-xl border-2 transition-all hover:-translate-y-1 hover:shadow-lg cursor-default", stats.completed >= 5 ? "bg-amber-100 border-amber-300 shadow-[0_0_15px_rgba(252,211,77,0.3)] shadow-inner" : "bg-white/5 border-white/10 grayscale opacity-50")}>
                                 <div className={cn("p-2 rounded-full mb-1", stats.completed >= 5 ? "bg-amber-50 text-amber-500" : "bg-white/10 text-white")}>
                                     <ShieldCheck className="h-5 w-5" />
                                 </div>
                                 <span className={cn("text-[10px] font-bold text-center leading-tight", stats.completed >= 5 ? "text-amber-700" : "text-emerald-100")}>Conductor<br />Medio</span>
                             </div>
-                            <div className={cn("shrink-0 snap-center flex flex-col items-center justify-center w-20 h-24 rounded-xl border-2 transition-all", isPerfectAttendance ? "bg-amber-100 border-amber-300 shadow-[0_0_15px_rgba(252,211,77,0.3)] shadow-inner" : "bg-white/5 border-white/10 grayscale opacity-50")}>
+                            <div className={cn("shrink-0 snap-center flex flex-col items-center justify-center w-20 h-24 rounded-xl border-2 transition-all hover:-translate-y-1 hover:shadow-lg cursor-default", isPerfectAttendance ? "bg-amber-100 border-amber-300 shadow-[0_0_15px_rgba(252,211,77,0.3)] shadow-inner" : "bg-white/5 border-white/10 grayscale opacity-50")}>
                                 <div className={cn("p-2 rounded-full mb-1", isPerfectAttendance ? "bg-amber-50 text-amber-500" : "bg-white/10 text-white")}>
                                     <Trophy className="h-5 w-5" />
                                 </div>
@@ -259,7 +267,7 @@ export default function StudentDashboardPage() {
                                                                 <UiBadge
                                                                     variant={isCompleted ? "secondary" : "default"}
                                                                     className={cn(
-                                                                        "capitalize text-[10px] font-bold tracking-wider",
+                                                                        "capitalize text-[10px] font-bold tracking-wider transition-transform hover:scale-105 cursor-default",
                                                                         isCompleted ? "bg-emerald-100 text-emerald-800 border-emerald-200" : "bg-blue-600"
                                                                     )}
                                                                 >
@@ -312,8 +320,9 @@ export default function StudentDashboardPage() {
                                                                 </span>
                                                             </div>
                                                             {!isCompleted && (
-                                                                <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400">
+                                                                <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400" title="Opciones de la clase">
                                                                     <MoreVertical className="h-4 w-4" />
+                                                                    <span className="sr-only">Opciones de la clase</span>
                                                                 </Button>
                                                             )}
                                                         </div>
@@ -431,7 +440,11 @@ export default function StudentDashboardPage() {
 
             {/* Rating Modal */}
             <Dialog open={ratingModalOpen} onOpenChange={setRatingModalOpen}>
-                <DialogContent className="sm:max-w-[425px]">
+                <DialogContent
+                    className="sm:max-w-[425px]"
+                    onInteractOutside={(e) => e.preventDefault()}
+                    onEscapeKeyDown={(e) => e.preventDefault()}
+                >
                     <DialogHeader className="pt-4 px-2 items-center flex flex-col gap-2">
                         <div className="h-12 w-12 bg-amber-100 text-amber-500 rounded-full flex items-center justify-center mb-2">
                             <Star className="h-6 w-6 fill-amber-500" />
@@ -446,8 +459,9 @@ export default function StudentDashboardPage() {
                             <button
                                 key={star}
                                 type="button"
-                                className="transition-transform hover:scale-110 active:scale-90"
+                                className="p-2 transition-transform hover:scale-110 active:scale-90"
                                 onClick={() => setRatingValue(star)}
+                                aria-label={`Calificar con ${star} estrellas`}
                             >
                                 <Star
                                     className={cn(
@@ -460,7 +474,18 @@ export default function StudentDashboardPage() {
                             </button>
                         ))}
                     </div>
-                    <DialogFooter className="sm:justify-center">
+                    <DialogFooter className="sm:justify-between flex sm:flex-row flex-col gap-2">
+                        <Button
+                            variant="ghost"
+                            className="w-full sm:w-auto text-muted-foreground"
+                            onClick={() => {
+                                setRatingModalOpen(false);
+                                setClassToRate(null);
+                            }}
+                            disabled={isSubmittingRating}
+                        >
+                            Calificar más tarde
+                        </Button>
                         <Button
                             className="w-full sm:w-auto"
                             disabled={ratingValue === 0 || isSubmittingRating}

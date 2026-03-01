@@ -1,5 +1,11 @@
 import { createClient } from '@/lib/supabase/server';
+import { Metadata } from 'next';
 import { Users, Mail, Phone, Calendar, User, PauseCircle, CheckCircle, Award, XCircle, LogOut, LayoutGrid, Check, X, CreditCard } from 'lucide-react';
+
+export const metadata: Metadata = {
+    title: 'Estudiantes | DriverCloudMD',
+    description: 'Gestión de estudiantes de la escuela de manejo.',
+};
 import { Button } from '@/components/ui/button';
 import { CreateStudentDialog } from '@/components/students/CreateStudentDialog';
 import { EditStudentDialog } from '@/components/students/EditStudentDialog';
@@ -162,7 +168,7 @@ export default async function StudentsPage({
                     <StudentSearch />
                 </div>
 
-                <div className="flex flex-wrap items-center gap-2 bg-card border rounded-xl p-1.5 shadow-sm overflow-x-auto">
+                <div className="flex flex-wrap items-center gap-2 bg-card/80 backdrop-blur-sm border-0 rounded-xl p-1.5 shadow-sm overflow-x-auto">
                     {filters.map((f) => {
                         const Icon = f.icon;
                         const isActive = statusFilter === f.id;
@@ -203,7 +209,7 @@ export default async function StudentsPage({
             </div>
 
             {/* Students Table */}
-            <div className="rounded-md border bg-card">
+            <div className="rounded-xl border-0 bg-card shadow-sm overflow-hidden">
                 <Table>
                     <TableHeader>
                         <TableRow>
@@ -307,10 +313,18 @@ export default async function StudentsPage({
                             })
                         ) : (
                             <TableRow>
-                                <TableCell colSpan={!isInstructor ? 7 : 6} className="h-24 text-center">
-                                    <div className="flex flex-col items-center justify-center p-4">
-                                        <Users className="h-10 w-10 text-muted-foreground opacity-50 mb-2" />
-                                        <p className="text-muted-foreground">No hay estudiantes registrados</p>
+                                <TableCell colSpan={!isInstructor ? 7 : 6} className="h-[400px] text-center bg-card/50">
+                                    <div className="flex flex-col items-center justify-center p-8 max-w-md mx-auto">
+                                        <div className="bg-primary/5 w-20 h-20 rounded-full flex items-center justify-center mb-6">
+                                            <Users className="h-10 w-10 text-primary/50" />
+                                        </div>
+                                        <h3 className="text-xl font-bold text-foreground mb-2">¡Aún no tienes alumnos!</h3>
+                                        <p className="text-muted-foreground text-center mb-6">
+                                            Empieza agregando a tu primer estudiante para llevar el control de sus clases, pagos y progreso.
+                                        </p>
+                                        {!isInstructor && (
+                                            <CreateStudentDialog />
+                                        )}
                                     </div>
                                 </TableCell>
                             </TableRow>

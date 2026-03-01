@@ -116,8 +116,9 @@ export default async function UsersPage() {
 
                             {/* Actions - Prevent deleting yourself or other owners if not super admin (logic simplified for UI) */}
                             {member.user_id !== user.id && (
-                                <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive/90 hover:bg-destructive/10">
+                                <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive/90 hover:bg-destructive/10" title="Eliminar usuario">
                                     <Trash2 className="h-4 w-4" />
+                                    <span className="sr-only">Eliminar usuario</span>
                                 </Button>
                             )}
                         </div>
@@ -125,8 +126,12 @@ export default async function UsersPage() {
                 ))}
 
                 {enrichedUsers.length === 0 && (
-                    <div className="p-8 text-center text-muted-foreground">
-                        No se encontraron usuarios.
+                    <div className="p-12 flex flex-col items-center justify-center text-center bg-card">
+                        <div className="bg-primary/5 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <UserCog className="h-8 w-8 text-primary/50" />
+                        </div>
+                        <p className="text-muted-foreground font-medium text-lg">No hay usuarios registrados</p>
+                        <p className="text-sm text-muted-foreground mt-1">Invita a tu equipo para colaborar en la plataforma.</p>
                     </div>
                 )}
             </div>

@@ -16,6 +16,7 @@ import {
 import { deleteVehicle } from '@/app/(auth)/dashboard/vehicles/actions';
 import { useRouter } from 'next/navigation';
 import { Trash2, Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
 
 interface DeleteVehicleButtonProps {
     vehicleId: string;
@@ -34,10 +35,11 @@ export function DeleteVehicleButton({ vehicleId, vehicleName, trigger }: DeleteV
         const result = await deleteVehicle(vehicleId);
 
         if (result.success) {
+            toast.success('Vehículo eliminado', { description: 'El vehículo se ha movido a la papelera.' });
             setOpen(false);
             router.refresh();
         } else {
-            alert(result.error || 'Error al eliminar el vehículo');
+            toast.error('Error', { description: result.error || 'No se pudo eliminar el vehículo.' });
         }
 
         setLoading(false);

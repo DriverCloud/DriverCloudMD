@@ -7,12 +7,25 @@ import { Clock, MapPin, User, ChevronRight, Phone, Navigation, Search } from "lu
 import { Input } from "@/components/ui/input";
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { format } from "date-fns";
+import { format, addDays, subDays, parse } from "date-fns";
 import { es } from "date-fns/locale";
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import { cn } from "@/lib/utils";
 
 export default function InstructorHomePage() {
+    const searchParams = useSearchParams();
+
+    // Initialize date from URL or default to today
+    const [selectedDate, setSelectedDate] = useState<Date>(() => {
+        const dateParam = searchParams.get('date');
+        if (dateParam) {
+            const parsed = parse(dateParam, 'yyyy-MM-dd', new Date());
+            if (!isNaN(parsed.getTime())) return parsed;
+        }
+        return new Date();
+    });
+
     const [classes, setClasses] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState("");
@@ -47,11 +60,10 @@ export default function InstructorHomePage() {
                 return;
             }
 
-            const now = new Date();
-            const year = now.getFullYear();
-            const month = String(now.getMonth() + 1).padStart(2, '0');
-            const day = String(now.getDate()).padStart(2, '0');
-            const todayStr = `${year}-${month}-${day}`;
+            const year = selectedDate.getFullYear();
+            const month = String(selectedDate.getMonth() + 1).padStart(2, '0');
+            const day = String(selectedDate.getDate()).padStart(2, '0');
+            const dateStr = `${year}-${month}-${day}`;
 
             const { data } = await supabase
                 .from('appointments')
@@ -62,7 +74,7 @@ export default function InstructorHomePage() {
                     class_type:class_types(name)
                 `)
                 .eq('instructor_id', instructorId)
-                .eq('scheduled_date', todayStr)
+                .eq('scheduled_date', dateStr)
                 .order('start_time', { ascending: true });
 
             if (data) {
@@ -72,7 +84,7 @@ export default function InstructorHomePage() {
         };
 
         fetchClasses();
-    }, []);
+    }, [selectedDate]);
 
     useEffect(() => {
         const searchStudents = async () => {
@@ -104,15 +116,29 @@ export default function InstructorHomePage() {
         </div>
     );
 
-    const todayPretty = format(new Date(), "EEEE d 'de' MMMM", { locale: es });
+    const isToday = format(selectedDate, 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd');
+    const datePretty = format(selectedDate, "EEEE d 'de' MMMM", { locale: es });
 
     return (
         <div className="space-y-6 pb-10">
             <div className="flex flex-col gap-1">
-                <h1 className="text-2xl font-black text-slate-900 dark:text-white capitalize">
-                    {todayPretty.split(' ')[0]}
-                </h1>
-                <p className="text-slate-500 font-medium">Tienes {classes.length} clases para hoy</p>
+                <div className="flex justify-between items-center">
+                    <h1 className="text-2xl font-black text-slate-900 dark:text-white capitalize">
+                        {isToday ? "Hoy" : datePretty.split(' ')[0]}
+                    </h1>
+                    <div className="flex bg-slate-100 rounded-full p-1 border">
+                        <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={() => setSelectedDate(prev => subDays(prev, 1))}>
+                            <ChevronRight className="h-5 w-5 text-slate-600 rotate-180" />
+                        </Button>
+                        <div className="flex items-center justify-center px-2 text-sm font-semibold min-w-24 capitalize">
+                            {format(selectedDate, "d MMM", { locale: es })}
+                        </div>
+                        <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={() => setSelectedDate(prev => addDays(prev, 1))}>
+                            <ChevronRight className="h-5 w-5 text-slate-600" />
+                        </Button>
+                    </div>
+                </div>
+                <p className="text-slate-500 font-medium">Tienes {classes.length} clases para {isToday ? "hoy" : "este día"}</p>
             </div>
 
             {/* Global Student Search */}

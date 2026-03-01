@@ -17,8 +17,8 @@ export function ActivityChart() {
     return (
         <Card className="col-span-4">
             <CardHeader>
-                <CardTitle>Actividad de Clases</CardTitle>
-                <CardDescription>
+                <CardTitle className="text-sm font-medium">Actividad de Clases</CardTitle>
+                <CardDescription className="text-xs">
                     Clases realizadas en los últimos 7 días.
                 </CardDescription>
             </CardHeader>
@@ -63,7 +63,7 @@ export function ActivityChart() {
                         />
                         <Bar
                             dataKey="classes"
-                            fill="currentColor"
+                            fill="#2563eb"
                             radius={[4, 4, 0, 0]}
                             className="fill-primary"
                         />

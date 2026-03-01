@@ -23,6 +23,7 @@ import {
 import { updateVehicle } from '@/app/(auth)/dashboard/vehicles/actions';
 import { useRouter } from 'next/navigation';
 import { Loader2, Pencil } from 'lucide-react';
+import { toast } from 'sonner';
 
 interface EditVehicleDialogProps {
     vehicle: {
@@ -50,15 +51,23 @@ export function EditVehicleDialog({ vehicle, trigger }: EditVehicleDialogProps) 
         setLoading(true);
         setError(null);
 
+        if (!transmissionType) {
+            setError('Por favor, selecciona un tipo de transmisión');
+            setLoading(false);
+            return;
+        }
+
         const formData = new FormData(e.currentTarget);
         formData.set('transmission_type', transmissionType);
 
         const result = await updateVehicle(vehicle.id, formData);
 
         if (result.success) {
+            toast.success('Vehículo actualizado', { description: 'Los cambios se han guardado correctamente.' });
             setOpen(false);
             router.refresh();
         } else {
+            toast.error('Error', { description: result.error || 'No se pudo actualizar el vehículo' });
             setError(result.error || 'Error desconocido');
         }
 
@@ -69,8 +78,9 @@ export function EditVehicleDialog({ vehicle, trigger }: EditVehicleDialogProps) 
         <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
                 {trigger || (
-                    <Button variant="ghost" size="sm">
+                    <Button variant="ghost" size="sm" title="Editar Vehículo">
                         <Pencil className="h-4 w-4" />
+                        <span className="sr-only">Editar Vehículo</span>
                     </Button>
                 )}
             </DialogTrigger>
@@ -198,7 +208,7 @@ export function EditVehicleDialog({ vehicle, trigger }: EditVehicleDialogProps) 
                         >
                             Cancelar
                         </Button>
-                        <Button type="submit" disabled={loading || !transmissionType}>
+                        <Button type="submit" disabled={loading}>
                             {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                             Guardar Cambios
                         </Button>

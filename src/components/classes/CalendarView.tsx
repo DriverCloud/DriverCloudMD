@@ -170,9 +170,9 @@ export function CalendarView({ appointments, currentDate, view, resources, filte
 
 
     return (
-        <div className="flex flex-col h-full border rounded-xl bg-white text-card-foreground shadow-sm overflow-hidden">
+        <div className="flex flex-col h-full border-0 rounded-xl bg-card text-card-foreground shadow-sm overflow-hidden">
             {/* Header */}
-            <div className="flex items-center justify-between p-4 border-b border-gray-200">
+            <div className="flex items-center justify-between p-4 border-b border-border/40">
                 <div className="flex items-center gap-2">
                     <Button variant="ghost" size="icon" onClick={handlePrev} className="h-8 w-8 hover:bg-gray-100">
                         <ChevronLeft className="h-4 w-4 text-gray-600" />
@@ -211,18 +211,18 @@ export function CalendarView({ appointments, currentDate, view, resources, filte
             </div>
 
             {/* Calendar Grid (Column-based for better overlap handling) */}
-            <div className="flex-1 overflow-auto bg-white relative">
+            <div className="flex-1 overflow-auto bg-card relative">
                 <div className={cn("min-w-[800px]", view === 'day' && "min-w-full")}>
                     <div className={cn(
                         "grid",
                         view === 'day' ? "grid-cols-[60px_1fr]" : "grid-cols-[60px_repeat(7,1fr)]"
                     )}>
                         {/* Header Row (Days) */}
-                        <div className="p-2 border-r border-gray-200 text-[10px] font-medium text-gray-400 text-center content-center bg-white sticky top-0 z-30 shadow-sm">GMT-3</div>
+                        <div className="p-2 border-r border-border/40 text-[10px] font-medium text-muted-foreground text-center content-center bg-card sticky top-0 z-30 shadow-sm">GMT-3</div>
                         {weekDays.map((day) => (
                             <div key={day.toString()} className={cn(
-                                "py-3 px-2 text-center border-r border-gray-200 bg-white sticky top-0 z-30 shadow-sm flex flex-col items-center justify-center gap-1",
-                                isSameDay(day, new Date()) && "bg-blue-50/30"
+                                "py-3 px-2 text-center border-r border-border/40 bg-card sticky top-0 z-30 shadow-sm flex flex-col items-center justify-center gap-1",
+                                isSameDay(day, new Date()) && "bg-primary/5"
                             )}>
                                 <div className="text-[11px] font-medium text-gray-500 uppercase tracking-wide">
                                     {format(day, 'EEE', { locale: es })}
@@ -237,9 +237,9 @@ export function CalendarView({ appointments, currentDate, view, resources, filte
                         ))}
 
                         {/* Time Labels Column */}
-                        <div className="bg-white sticky left-0 z-20 border-r border-gray-200">
+                        <div className="bg-card sticky left-0 z-20 border-r border-border/40">
                             {timeSlots.map((hour) => (
-                                <div key={hour} className="h-[60px] border-b border-gray-200 text-[10px] font-medium text-gray-400 text-right pr-3 pt-2 relative">
+                                <div key={hour} className="h-[60px] border-b border-border/40 text-[10px] font-medium text-muted-foreground text-right pr-3 pt-2 relative">
                                     <span className="-top-2 absolute right-3">{`${hour}:00`}</span>
                                 </div>
                             ))}
@@ -273,8 +273,8 @@ export function CalendarView({ appointments, currentDate, view, resources, filte
 
                             return (
                                 <div key={day.toString()} className={cn(
-                                    "border-r border-gray-200 relative min-h-[780px]", // 13 slots * 60px
-                                    isSameDay(day, new Date()) ? "bg-blue-50/10" : "bg-white"
+                                    "border-r border-border/40 relative min-h-[780px]", // 13 slots * 60px
+                                    isSameDay(day, new Date()) ? "bg-primary/5" : "bg-card"
                                 )}>
                                     {/* Current Time Indicator Line */}
                                     {isToday && currentTimeTop >= 0 && (
@@ -291,7 +291,7 @@ export function CalendarView({ appointments, currentDate, view, resources, filte
                                     {timeSlots.map((hour) => (
                                         <div
                                             key={hour}
-                                            className="h-[60px] border-b border-gray-200 transition-colors hover:bg-gray-50/50"
+                                            className="h-[60px] border-b border-border/40 transition-colors hover:bg-muted/50"
                                             onClick={() => handleSlotClick(dayStr, hour)}
                                         />
                                     ))}
@@ -379,7 +379,7 @@ export function CalendarView({ appointments, currentDate, view, resources, filte
                                                         {/* Dropdown / Details List */}
                                                         {isOpen && (
                                                             <div
-                                                                className="absolute top-full mt-2 left-0 min-w-[220px] w-full bg-white border border-gray-200 shadow-xl rounded-lg z-50 p-2 max-h-[300px] overflow-y-auto ring-1 ring-black/5"
+                                                                className="absolute top-full mt-2 left-0 min-w-[220px] w-full bg-card border-0 shadow-xl rounded-2xl z-50 p-2 max-h-[300px] overflow-y-auto ring-1 ring-black/5"
                                                                 onClick={(e) => e.stopPropagation()}
                                                             >
                                                                 <div className="flex justify-between items-center mb-2 px-1 border-b pb-2">
@@ -407,7 +407,7 @@ export function CalendarView({ appointments, currentDate, view, resources, filte
                                                                             <div
                                                                                 key={app.id}
                                                                                 className={cn(
-                                                                                    "p-2 rounded-md border text-xs cursor-pointer hover:shadow-md transition-all relative overflow-hidden pl-3",
+                                                                                    "p-2 rounded-lg border-0 shadow-sm text-xs cursor-pointer hover:shadow-md transition-all relative overflow-hidden pl-3",
                                                                                     statusStyle.bg, statusStyle.border, statusStyle.text,
                                                                                     app.status === 'cancelled' && "opacity-70"
                                                                                 )}
@@ -488,7 +488,7 @@ export function CalendarView({ appointments, currentDate, view, resources, filte
                                                         <ContextMenuTrigger>
                                                             <div
                                                                 className={cn(
-                                                                    "absolute rounded-md text-xs shadow-sm cursor-pointer transition-all duration-200 z-20 hover:z-30 hover:shadow-md flex flex-col justify-start overflow-hidden border",
+                                                                    "absolute rounded-lg text-xs shadow-sm cursor-pointer transition-all duration-200 z-20 hover:z-30 hover:shadow-md border-0 flex flex-col justify-start overflow-hidden",
                                                                     // Reduce padding for small cards
                                                                     isSmall ? "p-1 pl-2" : "p-1.5 pl-2.5",
                                                                     statusStyle.bg,
@@ -604,7 +604,7 @@ export function CalendarView({ appointments, currentDate, view, resources, filte
                                             <div
                                                 key={app.id}
                                                 className={cn(
-                                                    "absolute rounded p-1 text-[10px] border opacity-60 z-10",
+                                                    "absolute rounded-lg p-1 text-[10px] border-0 shadow-sm opacity-60 z-10",
                                                     finalColors.bg,
                                                     finalColors.border,
                                                     finalColors.text,

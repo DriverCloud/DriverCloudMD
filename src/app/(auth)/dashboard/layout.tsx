@@ -12,6 +12,7 @@ export default async function DashboardLayout({
     const { data: { user } } = await supabase.auth.getUser();
 
     let userRole = null;
+    let userName = "Usuario";
 
     if (user) {
         // Fetch membership role
@@ -22,12 +23,13 @@ export default async function DashboardLayout({
             .single();
 
         userRole = membership?.role;
+        userName = user.user_metadata?.full_name || user.email?.split('@')[0] || "Usuario";
     }
 
     return (
         <div className="flex min-h-screen bg-muted/40">
             <SessionRefresh />
-            <Sidebar role={userRole} />
+            <Sidebar role={userRole} userName={userName} />
             <div className="flex flex-col flex-1 h-screen overflow-hidden">
                 <Header />
                 <main className="flex-1 overflow-y-auto p-4 lg:p-6">

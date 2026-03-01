@@ -70,6 +70,12 @@ export function SellPackageDialog({ studentId, studentName, trigger }: SellPacka
         setLoading(true);
         setError(null);
 
+        if (!isManual && !selectedPkgId) {
+            setError('Por favor, selecciona un paquete de la lista o elige edición manual.');
+            setLoading(false);
+            return;
+        }
+
         const formData = new FormData(e.currentTarget);
         formData.append('student_id', studentId);
 
@@ -91,10 +97,16 @@ export function SellPackageDialog({ studentId, studentName, trigger }: SellPacka
                 {trigger || (
                     <Button variant="ghost" size="icon" title="Vender Paquete">
                         <DollarSign className="h-4 w-4 text-emerald-600" />
+                        <span className="sr-only">Vender Paquete</span>
                     </Button>
                 )}
             </DialogTrigger>
-            <DialogContent className="sm:max-w-[425px]">
+            <DialogContent
+                className="sm:max-w-[425px]"
+                onInteractOutside={(e) => e.preventDefault()}
+                onPointerDownOutside={(e) => e.preventDefault()}
+                onFocusOutside={(e) => e.preventDefault()}
+            >
                 <form onSubmit={handleSubmit}>
                     <DialogHeader>
                         <DialogTitle>Vender Paquete</DialogTitle>
@@ -120,7 +132,12 @@ export function SellPackageDialog({ studentId, studentName, trigger }: SellPacka
                                     className="h-6 text-xs text-blue-600 hover:text-blue-700"
                                     onClick={() => {
                                         setIsManual(!isManual);
-                                        if (!isManual) setSelectedPkgId(''); // clear selection if going fully manual
+                                        if (isManual) {
+                                            // Canceling manual mode: revert to whatever was selected in the dropdown
+                                            handlePackageSelect(selectedPkgId);
+                                        } else {
+                                            setSelectedPkgId(''); // clear selection if going fully manual
+                                        }
                                     }}
                                 >
                                     {isManual ? 'Cancelar edición manual' : 'Editar manualmente'}
@@ -131,6 +148,7 @@ export function SellPackageDialog({ studentId, studentName, trigger }: SellPacka
                                     <select
                                         className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                                         value={selectedPkgId}
+                                        onClick={(e) => e.stopPropagation()}
                                         onChange={(e) => handlePackageSelect(e.target.value)}
                                         disabled={isManual && !selectedPkgId}
                                     >

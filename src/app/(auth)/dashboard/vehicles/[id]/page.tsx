@@ -64,9 +64,10 @@ export default async function VehicleDetailPage({ params }: { params: Promise<{ 
         <div className="flex flex-col gap-6 max-w-7xl mx-auto">
             {/* Header */}
             <div className="flex items-center gap-4">
-                <Button variant="ghost" size="icon" asChild>
+                <Button variant="ghost" size="icon" asChild title="Volver a vehículos">
                     <Link href="/dashboard/vehicles">
                         <ArrowLeft className="h-4 w-4" />
+                        <span className="sr-only">Volver a vehículos</span>
                     </Link>
                 </Button>
                 <div>
@@ -226,7 +227,7 @@ export default async function VehicleDetailPage({ params }: { params: Promise<{ 
 
                                 return (
                                     <Card key={doc.id} className={cn(
-                                        "border-l-4",
+                                        "border-l-4 transition-all hover:-translate-y-1 hover:shadow-md",
                                         isExpired ? "border-l-destructive" : isSoon ? "border-l-orange-500" : "border-l-emerald-500"
                                     )}>
                                         <CardHeader>
@@ -234,9 +235,9 @@ export default async function VehicleDetailPage({ params }: { params: Promise<{ 
                                                 <div className="flex flex-col gap-2">
                                                     <span>{doc.type}</span>
                                                     <div className="flex gap-2">
-                                                        {isExpired && <Badge variant="destructive">Vencido</Badge>}
-                                                        {isSoon && <Badge className="bg-orange-500 hover:bg-orange-600">Vence Pronto</Badge>}
-                                                        {!isExpired && !isSoon && <Badge className="bg-emerald-500 hover:bg-emerald-600">Vigente</Badge>}
+                                                        {isExpired && <Badge variant="destructive" className="transition-transform hover:scale-105">Vencido</Badge>}
+                                                        {isSoon && <Badge className="bg-orange-500 hover:bg-orange-600 transition-transform hover:scale-105">Vence Pronto</Badge>}
+                                                        {!isExpired && !isSoon && <Badge className="bg-emerald-500 hover:bg-emerald-600 transition-transform hover:scale-105">Vigente</Badge>}
                                                     </div>
                                                 </div>
                                                 <DeleteDocumentButton documentId={doc.id} vehicleId={id} />

@@ -20,6 +20,7 @@ import { useRouter } from 'next/navigation';
 import { Loader2, CheckCircle, DollarSign, Plus } from 'lucide-react';
 import { SellPackageDialog } from './SellPackageDialog';
 import { RegisterPaymentDialog } from '../finance/RegisterPaymentDialog';
+import { toast } from 'sonner';
 
 interface CreateStudentDialogProps {
     trigger?: React.ReactNode;
@@ -46,6 +47,7 @@ export function CreateStudentDialog({ trigger }: CreateStudentDialogProps) {
             // Reset form
             (e.target as HTMLFormElement).reset();
         } else {
+            toast.error('Error', { description: result.error || 'No se pudo registrar el estudiante.' });
             setError(result.error || 'Error desconocido');
         }
 

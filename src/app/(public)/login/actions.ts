@@ -28,8 +28,8 @@ export async function loginAsDemo() {
 
     // Try to login with demo user
     const { error } = await supabase.auth.signInWithPassword({
-        email: 'demo@drivercloud.com',
-        password: 'password123'
+        email: 'donaelena@test.com',
+        password: 'Password123!'
     })
 
     if (error) {

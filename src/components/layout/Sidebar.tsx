@@ -79,9 +79,10 @@ const menuGroups = [
 
 interface SidebarProps {
     role?: string | null;
+    userName?: string | null;
 }
 
-export function Sidebar({ role }: SidebarProps) {
+export function Sidebar({ role, userName }: SidebarProps) {
     const pathname = usePathname();
 
     // Define restricted view: Instructors only see simplified menu
@@ -146,7 +147,7 @@ export function Sidebar({ role }: SidebarProps) {
 
 
     return (
-        <aside className="flex flex-col w-72 h-full bg-background border-r border-border flex-shrink-0 transition-all duration-300">
+        <aside className="flex flex-col w-72 h-full bg-card border-r border-border/40 shrink-0 transition-all duration-300">
             {/* Logo Area */}
             <div className="flex items-center gap-3 px-6 h-16 border-b border-border/50">
                 <div className="flex items-center justify-center h-8 w-8 bg-primary rounded-lg text-primary-foreground">
@@ -194,8 +195,8 @@ export function Sidebar({ role }: SidebarProps) {
                         style={{ backgroundImage: 'url("https://lh3.googleusercontent.com/aida-public/AB6AXuB4dmGbXMOsUvYf4_qY56FnlnpxBQQdLSD2L8rTOizctCsJ6lCyxsWD9osnC3zbIz2JGciSpFABvemOVUQ7guCCck4dZ-b2VB9D4VZRDKmSl58UF97y2j9W9YMGt7dAYpPcJ4PAStEzTTcyjC2wZRDbbjUL1AvjsZWuMUMJCos9xZ7S_FRQ2vRspedwgcWWhm5e36IoOOfFR1wNrk747oQ40WOPRRQVGGcqkPrSXO6AaJFhU7kIjtsPXJUiVw_Zu6UctmAs_As7QDum")' }}
                     />
                     <div className="flex flex-col overflow-hidden">
-                        <p className="text-sm font-semibold text-foreground truncate">Usuario</p>
-                        <p className="text-xs text-muted-foreground truncate capitalize">{role || 'Cargando...'}</p>
+                        <p className="text-sm font-semibold text-foreground truncate">{userName || 'Usuario'}</p>
+                        <p className="text-xs text-muted-foreground truncate capitalize">{role || ''}</p>
                     </div>
                 </div>
                 <button
