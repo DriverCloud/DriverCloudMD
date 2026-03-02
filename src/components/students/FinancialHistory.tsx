@@ -63,7 +63,7 @@ export function FinancialHistory({ packages, payments, studentId }: FinancialHis
                                     ))}
                                     {packages.map((pkg) => (
                                         <tr key={pkg.id} className="border-b">
-                                            <td className="p-3">{new Date(pkg.purchase_date).toLocaleDateString()}</td>
+                                            <td className="p-3">{new Date(pkg.purchase_date || pkg.created_at).toLocaleDateString()}</td>
                                             <td className="p-3">
                                                 <Badge variant="outline" className="bg-rose-50 text-rose-700 border-rose-200">
                                                     Compra Pack
@@ -110,14 +110,14 @@ export function FinancialHistory({ packages, payments, studentId }: FinancialHis
                                         <div>
                                             <p className="font-medium">{pkg.name}</p>
                                             <p className="text-xs text-muted-foreground">
-                                                {new Date(pkg.purchase_date).toLocaleDateString()}
+                                                {new Date(pkg.purchase_date || pkg.created_at).toLocaleDateString()}
                                             </p>
                                         </div>
                                     </div>
                                     <div className="text-right">
                                         <p className="font-bold">${pkg.price.toLocaleString()}</p>
                                         <span className="text-xs bg-secondary px-2 py-0.5 rounded-full">
-                                            {pkg.remaining_credits} / {pkg.total_credits} créditos
+                                            {pkg.remaining_credits !== undefined ? pkg.remaining_credits : pkg.credits} / {pkg.total_credits} créditos
                                         </span>
                                     </div>
                                 </div>

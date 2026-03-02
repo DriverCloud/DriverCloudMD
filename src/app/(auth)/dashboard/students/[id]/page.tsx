@@ -52,7 +52,7 @@ export default async function StudentDetailPage({ params }: { params: Promise<{ 
         .from('student_packages')
         .select('*')
         .eq('student_id', id)
-        .order('purchase_date', { ascending: false });
+        .order('created_at', { ascending: false });
 
     // 5. Fetch Payments
     const { data: payments } = await supabase

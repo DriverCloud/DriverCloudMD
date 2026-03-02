@@ -16,6 +16,13 @@ import { Label } from '@/components/ui/label';
 import { createPackage } from '@/app/(auth)/dashboard/students/actions';
 import { Loader2, DollarSign } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
 
 interface SellPackageDialogProps {
     studentId: string;
@@ -145,20 +152,22 @@ export function SellPackageDialog({ studentId, studentName, trigger }: SellPacka
                             </div>
                             <div className="grid gap-2">
                                 {packages.length > 0 ? (
-                                    <select
-                                        className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                                        value={selectedPkgId}
-                                        onClick={(e) => e.stopPropagation()}
-                                        onChange={(e) => handlePackageSelect(e.target.value)}
+                                    <Select
+                                        value={selectedPkgId || undefined}
+                                        onValueChange={handlePackageSelect}
                                         disabled={isManual && !selectedPkgId}
                                     >
-                                        <option value="">-- Seleccionar --</option>
-                                        {packages.map(p => (
-                                            <option key={p.id} value={p.id}>
-                                                {p.name} ({p.class_count} clases) - ${p.price}
-                                            </option>
-                                        ))}
-                                    </select>
+                                        <SelectTrigger className="w-full">
+                                            <SelectValue placeholder="-- Seleccionar --" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {packages.map(p => (
+                                                <SelectItem key={p.id} value={p.id.toString()}>
+                                                    {p.name} ({p.class_count} clases) - ${p.price}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
                                 ) : (
                                     <p className="text-xs text-muted-foreground">No hay paquetes configurados.</p>
                                 )}

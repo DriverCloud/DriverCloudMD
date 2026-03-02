@@ -58,7 +58,7 @@ export function StudentProfileHeader({ student, balance, userRole, resources, pa
 
     // Calculate Progress
     const totalCredits = packages?.reduce((sum, pkg) => sum + (pkg.total_credits || 0), 0) || 0;
-    const remainingCredits = packages?.reduce((sum, pkg) => sum + (pkg.remaining_credits || 0), 0) || 0;
+    const remainingCredits = packages?.reduce((sum, pkg) => sum + (pkg.remaining_credits !== undefined ? pkg.remaining_credits : (pkg.credits || 0)), 0) || 0;
     const usedCredits = totalCredits - remainingCredits;
     const progressPercentage = totalCredits > 0 ? (usedCredits / totalCredits) * 100 : 0;
 
