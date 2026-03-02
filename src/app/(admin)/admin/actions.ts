@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { revalidatePath } from "next/cache";
 
 export async function getAdminStats() {
     const supabase = await createClient();
@@ -129,5 +130,27 @@ export async function createSchool(data: {
         success: true,
         message: "Escuela creada correctamente",
         tempPassword
+    };
+}
+
+export async function toggleSchoolStatus(schoolId: string, currentStatus: string) {
+    const supabaseAdmin = createAdminClient();
+    const newStatus = currentStatus === 'active' ? 'suspended' : 'active';
+
+    const { error } = await supabaseAdmin
+        .from('schools')
+        .update({ status: newStatus })
+        .eq('id', schoolId);
+
+    if (error) {
+        console.error("Error toggling school status:", error);
+        return { success: false, message: `Error al cambiar estado: ${error.message}` };
+    }
+
+    revalidatePath('/admin/schools');
+
+    return {
+        success: true,
+        message: `Escuela ${newStatus === 'active' ? 'activada' : 'suspendida'} correctamente.`
     };
 }

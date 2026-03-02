@@ -79,7 +79,10 @@ async function checkConflicts(
         .select('id, instructor_id, vehicle_id, student_id, start_time, end_time')
         .eq('scheduled_date', date)
         .eq('status', 'scheduled')
-        .or(`and(start_time.lte.${startTime},end_time.gt.${startTime}),and(start_time.lt.${endTime},end_time.gte.${endTime}),and(start_time.gte.${startTime},end_time.lte.${endTime})`);
+        // Two time periods A and B overlap if: A.start < B.end AND A.end > B.start
+        // Where A is existing appointment, B is new appointment
+        .lt('start_time', endTime)
+        .gt('end_time', startTime);
 
     if (excludeAppointmentId) {
         query = query.neq('id', excludeAppointmentId);
@@ -199,6 +202,13 @@ export async function createAppointment(formData: FormData) {
     const dateObj = new Date();
     dateObj.setHours(hours, minutes + classType.duration_minutes);
     const endTime = `${dateObj.getHours().toString().padStart(2, '0')}:${dateObj.getMinutes().toString().padStart(2, '0')}`;
+
+    // VALIDATE RESOURCE STATUS (Prevent booking deleted/inactive resources)
+    const { data: instructorCheck } = await supabase.from('instructors').select('status').eq('id', instructorId).single();
+    if (instructorCheck?.status !== 'active') return { success: false, error: 'El instructor seleccionado no está activo o fue eliminado.' };
+
+    const { data: vehicleCheck } = await supabase.from('vehicles').select('status').eq('id', vehicleId).single();
+    if (vehicleCheck?.status !== 'active') return { success: false, error: 'El vehículo seleccionado no está apto o fue eliminado.' };
 
     // VALIDATE AVAILABILITY - Check for conflicts
     const conflictCheck = await checkConflicts(
@@ -447,6 +457,13 @@ export async function updateAppointment(appointmentId: string, formData: FormDat
     const dateObj = new Date();
     dateObj.setHours(hours, minutes + classType.duration_minutes);
     const endTime = `${dateObj.getHours().toString().padStart(2, '0')}:${dateObj.getMinutes().toString().padStart(2, '0')}`;
+
+    // VALIDATE RESOURCE STATUS
+    const { data: instructorCheck } = await supabase.from('instructors').select('status').eq('id', instructorId).single();
+    if (instructorCheck?.status !== 'active') return { success: false, error: 'El instructor seleccionado no está activo o fue eliminado.' };
+
+    const { data: vehicleCheck } = await supabase.from('vehicles').select('status').eq('id', vehicleId).single();
+    if (vehicleCheck?.status !== 'active') return { success: false, error: 'El vehículo seleccionado no está apto o fue eliminado.' };
 
     // VALIDATE AVAILABILITY - Check for conflicts (excluding current appointment)
     const conflictCheck = await checkConflicts(

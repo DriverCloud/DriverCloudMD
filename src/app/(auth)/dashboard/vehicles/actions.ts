@@ -34,9 +34,24 @@ export async function createVehicle(formData: FormData): Promise<ActionState> {
     const transmissionType = formData.get('transmission_type') as string;
     const status = formData.get('status') as string || 'active';
 
+    const cleanedLicensePlate = licensePlate.trim().toUpperCase();
+
     // Validate required fields
-    if (!brand || !model || !year || !licensePlate || !transmissionType) {
+    if (!brand || !model || !year || !cleanedLicensePlate || !transmissionType) {
         return { success: false, error: 'Todos los campos son requeridos' };
+    }
+
+    // Check for duplicate license plate in this school
+    const { data: existingVehicle } = await supabase
+        .from('vehicles')
+        .select('id')
+        .eq('school_id', membership.school_id)
+        .eq('license_plate', cleanedLicensePlate)
+        .is('deleted_at', null)
+        .maybeSingle();
+
+    if (existingVehicle) {
+        return { success: false, error: 'Ya existe un vehículo registrado con esta placa/chapa' };
     }
 
     // Insert vehicle
@@ -49,7 +64,7 @@ export async function createVehicle(formData: FormData): Promise<ActionState> {
             brand,
             model,
             year: parseInt(year),
-            license_plate: licensePlate,
+            license_plate: cleanedLicensePlate,
             transmission_type: transmissionType,
             status: status
         })
@@ -86,9 +101,25 @@ export async function updateVehicle(vehicleId: string, formData: FormData) {
     const status = formData.get('status') as string;
     const odometer = formData.get('odometer') as string;
 
+    const cleanedLicensePlate = licensePlate.trim().toUpperCase();
+
     // Validate required fields
-    if (!brand || !model || !year || !licensePlate || !transmissionType) {
+    if (!brand || !model || !year || !cleanedLicensePlate || !transmissionType) {
         return { success: false, error: 'Todos los campos son requeridos' };
+    }
+
+    // Check for duplicate license plate for a DIFFERENT vehicle in this school
+    const { data: existingVehicle } = await supabase
+        .from('vehicles')
+        .select('id')
+        .eq('school_id', (await supabase.from('vehicles').select('school_id').eq('id', vehicleId).single()).data?.school_id)
+        .eq('license_plate', cleanedLicensePlate)
+        .is('deleted_at', null)
+        .neq('id', vehicleId)
+        .maybeSingle();
+
+    if (existingVehicle) {
+        return { success: false, error: 'Ya existe otro vehículo registrado con esta placa/chapa' };
     }
 
     // Update vehicle
@@ -98,7 +129,7 @@ export async function updateVehicle(vehicleId: string, formData: FormData) {
             brand,
             model,
             year: parseInt(year),
-            license_plate: licensePlate,
+            license_plate: cleanedLicensePlate,
             transmission_type: transmissionType,
             status: status || undefined,
             odometer: odometer ? parseFloat(odometer) : undefined,

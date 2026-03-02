@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { format, addDays, startOfWeek, addWeeks, subWeeks, endOfWeek, parseISO, isSameDay, addHours, setHours, setMinutes, isBefore, isAfter } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Button } from '@/components/ui/button';
-import { ChevronLeft, ChevronRight, Plus, Pencil, Calendar as CalendarIcon, Clock, User, Car, CheckCircle, XCircle, AlertCircle, Loader2 } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Plus, Pencil, Calendar as CalendarIcon, Clock, User, Car, CheckCircle, XCircle, AlertCircle, Loader2, ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
     Select,
@@ -14,6 +14,11 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
+import {
+    Popover,
+    PopoverContent,
+    PopoverTrigger,
+} from '@/components/ui/popover';
 import {
     ContextMenu,
     ContextMenuContent,
@@ -70,6 +75,24 @@ export function CalendarView({ appointments, currentDate, view, resources, filte
     const [selectedTime, setSelectedTime] = useState<string>('');
     const [selectedAppointment, setSelectedAppointment] = useState<any | null>(null);
     const [expandedClusterId, setExpandedClusterId] = useState<string | null>(null);
+
+    // Date Selector logic
+    const [dateSelectorOpen, setDateSelectorOpen] = useState(false);
+    const [selectedMonth, setSelectedMonth] = useState(currentDate.getMonth().toString());
+    const [selectedYear, setSelectedYear] = useState(currentDate.getFullYear().toString());
+
+    React.useEffect(() => {
+        if (!dateSelectorOpen) {
+            setSelectedMonth(currentDate.getMonth().toString());
+            setSelectedYear(currentDate.getFullYear().toString());
+        }
+    }, [currentDate, dateSelectorOpen]);
+
+    const handleJumpToDate = () => {
+        const newDate = new Date(parseInt(selectedYear), parseInt(selectedMonth), 1);
+        router.push(`/dashboard/classes?date=${format(newDate, 'yyyy-MM-dd')}&view=${view}`);
+        setDateSelectorOpen(false);
+    };
 
     // Current time indicator logic
     const [now, setNow] = useState(new Date());
@@ -177,9 +200,56 @@ export function CalendarView({ appointments, currentDate, view, resources, filte
                     <Button variant="ghost" size="icon" onClick={handlePrev} className="h-8 w-8 hover:bg-gray-100">
                         <ChevronLeft className="h-4 w-4 text-gray-600" />
                     </Button>
-                    <span className="text-xl font-bold capitalize text-gray-800 ml-2 mr-2 min-w-[180px] text-center">
-                        {format(currentDate, 'MMMM yyyy', { locale: es })}
-                    </span>
+                    <Popover open={dateSelectorOpen} onOpenChange={setDateSelectorOpen}>
+                        <PopoverTrigger asChild>
+                            <Button variant="ghost" className="text-xl font-bold capitalize text-gray-800 ml-2 mr-2 min-w-[180px] h-auto py-1 hover:bg-gray-100 flex items-center justify-center gap-2">
+                                {format(currentDate, 'MMMM yyyy', { locale: es })}
+                                <ChevronDown className="h-4 w-4 opacity-50" />
+                            </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-80 p-4" align="center">
+                            <div className="grid gap-4">
+                                <div className="space-y-2">
+                                    <h4 className="font-medium leading-none">Saltar a fecha</h4>
+                                    <p className="text-sm text-muted-foreground">
+                                        Selecciona un mes y año específico para ver el calendario.
+                                    </p>
+                                </div>
+                                <div className="grid grid-cols-2 gap-2">
+                                    <Select value={selectedMonth} onValueChange={setSelectedMonth}>
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="Mes" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {Array.from({ length: 12 }).map((_, i) => (
+                                                <SelectItem key={i} value={i.toString()} className="capitalize">
+                                                    {format(new Date(2024, i, 1), 'MMMM', { locale: es })}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                    <Select value={selectedYear} onValueChange={setSelectedYear}>
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="Año" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {Array.from({ length: 10 }).map((_, i) => {
+                                                const year = new Date().getFullYear() - 2 + i;
+                                                return (
+                                                    <SelectItem key={year} value={year.toString()}>
+                                                        {year}
+                                                    </SelectItem>
+                                                );
+                                            })}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                                <Button onClick={handleJumpToDate} className="w-full">
+                                    Ir a la fecha
+                                </Button>
+                            </div>
+                        </PopoverContent>
+                    </Popover>
                     <Button variant="ghost" size="icon" onClick={handleNext} className="h-8 w-8 hover:bg-gray-100">
                         <ChevronRight className="h-4 w-4 text-gray-600" />
                     </Button>
