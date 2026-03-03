@@ -142,23 +142,11 @@ async function refundCredits(supabase: any, appointmentId: string) {
     // Calculate credit to refund
     const creditAmount = appointment.class_type.duration_minutes >= 90 ? 2 : 1;
 
-    // Get current package credits
-    const { data: pkg, error: pkgError } = await supabase
-        .from('student_packages')
-        .select('credits')
-        .eq('id', appointment.package_id)
-        .single();
-
-    if (pkgError || !pkg) {
-        console.error('Error fetching package for refund:', pkgError);
-        return;
-    }
-
-    // Refund credits
-    const { error: updateError } = await supabase
-        .from('student_packages')
-        .update({ credits: pkg.credits + creditAmount })
-        .eq('id', appointment.package_id);
+    // EJECUCIÓN ATÓMICA: Incremento directo en la base de datos protegiendo contra threads
+    const { error: updateError } = await supabase.rpc('increment_package_credits', {
+        package_id: appointment.package_id,
+        amount_to_add: creditAmount
+    });
 
     if (updateError) {
         console.error('Error refunding credits:', updateError);

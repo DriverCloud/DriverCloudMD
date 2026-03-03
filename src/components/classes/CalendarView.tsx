@@ -138,58 +138,65 @@ export function CalendarView({ appointments, currentDate, view, resources, filte
     // Generate time slots (8:00 to 20:00)
     const timeSlots = Array.from({ length: 13 }).map((_, i) => 8 + i); // 8 AM to 8 PM
 
-    // Function to calculate free slots
+    // Pre-computamos el mapa diario UNA SOLA VEZ cuando cambian los appointments
+    const appointmentsByDay = useMemo(() => {
+        const map = new Map();
+        appointments.forEach(app => {
+            if (app.status === 'cancelled' || app.status === 'completed') return;
+            if (!map.has(app.scheduled_date)) map.set(app.scheduled_date, []);
+
+            const [startH, startM] = app.start_time.split(':').map(Number);
+            const [endH, endM] = app.end_time.split(':').map(Number);
+
+            map.get(app.scheduled_date).push({
+                startMins: startH * 60 + startM,
+                endMins: endH * 60 + endM,
+                duration: app.class_type?.duration_minutes || 60,
+                vehicleId: app.vehicle_id,
+            });
+        });
+
+        // Ordenamos solo una vez por día
+        map.forEach(list => list.sort((a: any, b: any) => a.startMins - b.startMins));
+        return map;
+    }, [appointments]);
+
+    // Nueva función de cálculo ultra rápida (O(1) lookups y operaciones aritméticas simples)
     const calculateFreeSlots = useMemo(() => {
         return (day: Date, hour: number) => {
             const dayStr = format(day, 'yyyy-MM-dd');
-            const startOfHour = setMinutes(setHours(parseISO(dayStr), hour), 0);
-            const endOfHour = setMinutes(setHours(parseISO(dayStr), hour), 59);
+            const dayApps = appointmentsByDay.get(dayStr) || [];
 
-            const appointmentsForDay = appointments
-                .filter(app => app.scheduled_date === dayStr && app.status !== 'cancelled' && app.status !== 'completed')
-                .map(app => {
-                    const [startHour, startMinute] = app.start_time.split(':').map(Number);
-                    const [endHour, endMinute] = app.end_time.split(':').map(Number);
-                    return {
-                        start: setMinutes(setHours(parseISO(dayStr), startHour), startMinute),
-                        end: setMinutes(setHours(parseISO(dayStr), endHour), endMinute),
-                        duration: app.class_type?.duration_minutes || 60,
-                        vehicleId: app.vehicle_id,
-                    };
-                })
-                .sort((a, b) => a.start.getTime() - b.start.getTime());
-
+            const hourStartMins = hour * 60;
+            const hourEndMins = hour * 60 + 59;
             const freeSlots = [];
-            let currentCheckTime = startOfHour;
+            let currentCheckMins = hourStartMins;
 
-            for (const app of appointmentsForDay) {
-                // If the appointment starts within this hour
-                if (isBefore(app.start, endOfHour) && isAfter(app.end, startOfHour)) {
-                    // Check for free space before this appointment
-                    if (isBefore(currentCheckTime, app.start)) {
-                        const freeStart = currentCheckTime;
-                        const freeEnd = isBefore(app.start, endOfHour) ? app.start : endOfHour;
-                        if (isBefore(freeStart, freeEnd)) {
-                            freeSlots.push({ start: freeStart, end: freeEnd });
+            for (const app of dayApps) {
+                if (app.startMins < hourEndMins && app.endMins > hourStartMins) {
+                    if (currentCheckMins < app.startMins) {
+                        const freeEnd = Math.min(app.startMins, hourEndMins);
+                        if (freeEnd > currentCheckMins) {
+                            freeSlots.push({ startMins: currentCheckMins, endMins: freeEnd });
                         }
                     }
-                    // Move currentCheckTime past this appointment's end
-                    currentCheckTime = isAfter(app.end, currentCheckTime) ? app.end : currentCheckTime;
+                    currentCheckMins = Math.max(app.endMins, currentCheckMins);
                 }
             }
 
-            // Check for free space after the last appointment or if no appointments
-            if (isBefore(currentCheckTime, endOfHour)) {
-                freeSlots.push({ start: currentCheckTime, end: endOfHour });
+            if (currentCheckMins < hourEndMins) {
+                freeSlots.push({ startMins: currentCheckMins, endMins: hourEndMins });
             }
 
-            // Filter out slots that are too short (e.g., less than 30 minutes)
-            return freeSlots.filter(slot => {
-                const duration = (slot.end.getTime() - slot.start.getTime()) / (1000 * 60);
-                return duration >= 30; // Minimum 30 minutes for a "free slot"
-            });
+            return freeSlots
+                .filter(slot => (slot.endMins - slot.startMins) >= 30) // Minimum 30 minutes for a "free slot"
+                .map(slot => {
+                    const start = setMinutes(setHours(day, Math.floor(slot.startMins / 60)), slot.startMins % 60);
+                    const end = setMinutes(setHours(day, Math.floor(slot.endMins / 60)), slot.endMins % 60);
+                    return { start, end };
+                });
         };
-    }, [appointments]);
+    }, [appointmentsByDay]);
 
 
     return (

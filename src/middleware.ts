@@ -45,6 +45,17 @@ export async function middleware(request: NextRequest) {
         return NextResponse.redirect(url)
     }
 
+    // Protect API routes
+    if (!user && path.startsWith('/api/')) {
+        // Exclude public APIs if necessary (e.g., webhooks)
+        if (!path.startsWith('/api/webhooks/')) {
+            return NextResponse.json(
+                { error: 'Unauthorized Access. Invalid token.' },
+                { status: 401 }
+            );
+        }
+    }
+
     // If user IS logged in
     if (user) {
         // 1. Check User Metadata first (faster, and used for students)

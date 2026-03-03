@@ -44,6 +44,7 @@ export function SellPackageDialog({ studentId, studentName, trigger }: SellPacka
     const [pkgName, setPkgName] = useState('');
     const [pkgCredits, setPkgCredits] = useState(10);
     const [pkgPrice, setPkgPrice] = useState(0);
+    const [paymentMethod, setPaymentMethod] = useState<string>('');
 
     // Initial load
     useEffect(() => {
@@ -79,6 +80,12 @@ export function SellPackageDialog({ studentId, studentName, trigger }: SellPacka
 
         if (!isManual && !selectedPkgId) {
             setError('Por favor, selecciona un paquete de la lista o elige edición manual.');
+            setLoading(false);
+            return;
+        }
+
+        if (pkgPrice > 0 && !paymentMethod) {
+            setError('Por favor, selecciona un método de pago.');
             setLoading(false);
             return;
         }
@@ -221,6 +228,24 @@ export function SellPackageDialog({ studentId, studentName, trigger }: SellPacka
                                         />
                                     </div>
                                 </div>
+                            </div>
+                        )}
+
+                        {pkgPrice > 0 && (
+                            <div className="space-y-2 pt-4 border-t">
+                                <Label htmlFor="payment_method">Método de Pago</Label>
+                                <Select required name="payment_method" value={paymentMethod} onValueChange={setPaymentMethod}>
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Seleccionar método de pago" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="cash">Efectivo</SelectItem>
+                                        <SelectItem value="transfer">Transferencia</SelectItem>
+                                        <SelectItem value="card">Tarjeta</SelectItem>
+                                        <SelectItem value="mercadopago">MercadoPago</SelectItem>
+                                        <SelectItem value="other">Otro</SelectItem>
+                                    </SelectContent>
+                                </Select>
                             </div>
                         )}
                     </div>
