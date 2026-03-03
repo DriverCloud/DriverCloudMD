@@ -36,7 +36,7 @@ export function ReportFilters({ locations }: ReportFiltersProps) {
     const isFiltered = !!searchParams.get('startDate') || !!searchParams.get('endDate') || !!searchParams.get('locationId')
 
     return (
-        <div className="flex flex-wrap items-center gap-4 p-4 bg-card border rounded-xl shadow-sm mb-6">
+        <div className="flex flex-wrap items-center gap-4 p-4 bg-card border rounded-xl shadow-sm">
             <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground mr-2">
                 <Filter className="h-4 w-4" />
                 Filtros

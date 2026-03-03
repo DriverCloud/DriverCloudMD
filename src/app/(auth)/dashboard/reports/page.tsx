@@ -105,11 +105,12 @@ export default async function ReportsPage({ searchParams }: PageProps) {
     }
 
     return (
-        <div className="flex flex-col gap-6 p-6 max-w-7xl mx-auto">
-            <div className="flex justify-between items-start">
+        <div className="flex flex-col gap-6 max-w-7xl mx-auto">
+            {/* Page Header */}
+            <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
                 <div>
                     <h1 className="text-3xl font-bold tracking-tight">Reportes y Análisis</h1>
-                    <p className="text-muted-foreground">Monitorea la salud financiera y el rendimiento de tu escuela.</p>
+                    <p className="text-muted-foreground mt-1">Monitorea la salud financiera y el rendimiento de tu escuela.</p>
                 </div>
             </div>
 
