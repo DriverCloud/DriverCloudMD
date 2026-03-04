@@ -1,6 +1,7 @@
 'use server';
 
 import { createClient } from '@/lib/supabase/server';
+import { logger } from '@/lib/logger';
 import { revalidatePath } from 'next/cache';
 import { getUserRole } from './auth';
 
@@ -28,14 +29,14 @@ export async function deleteVehicleDocument(documentId: string, vehicleId: strin
             .eq('vehicle_id', vehicleId);
 
         if (error) {
-            console.error('Error deleting document:', error);
+            logger.error({ err: error, documentId, vehicleId, userId: user.id }, 'Error deleting document');
             return { error: 'Error al eliminar el documento' };
         }
 
         revalidatePath(`/dashboard/vehicles/${vehicleId}`);
         return { success: true };
     } catch (error) {
-        console.error('Unexpected error:', error);
+        logger.error({ err: error, documentId, vehicleId }, 'Unexpected error in deleteVehicleDocument');
         return { error: 'Ocurrió un error inesperado' };
     }
 }

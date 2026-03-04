@@ -1,6 +1,7 @@
 'use server'
 
 import { createClient } from "@/lib/supabase/server";
+import { logger } from "@/lib/logger";
 import { revalidatePath } from "next/cache";
 
 import { ActionState } from "@/types";
@@ -67,9 +68,11 @@ export async function createStudent(formData: FormData): Promise<ActionState> {
     const { data: newStudent, error } = await supabase.from("students").insert(data).select().single();
 
     if (error) {
+        logger.error({ err: error, action: 'createStudent', userId: user.id }, 'Error al insertar nuevo estudiante en BD');
         return { success: false, error: error.message };
     }
 
+    logger.info({ studentId: newStudent?.id, userId: user.id }, 'Estudiante creado exitosamente');
     revalidatePath("/dashboard/students");
     return { success: true, data: newStudent };
 }
@@ -122,9 +125,11 @@ export async function updateStudent(id: string, formData: FormData): Promise<Act
     const { error } = await supabase.from("students").update(data).eq("id", id).eq("school_id", membership.school_id);
 
     if (error) {
+        logger.error({ err: error, action: 'updateStudent', studentId: id, userId: user.id }, 'Error al actualizar estudiante en BD');
         return { success: false, error: error.message };
     }
 
+    logger.info({ studentId: id, userId: user.id }, 'Estudiante actualizado exitosamente');
     revalidatePath("/dashboard/students");
     return { success: true };
 }
@@ -165,10 +170,11 @@ export async function createPackage(formData: FormData): Promise<ActionState> {
     });
 
     if (error) {
-        console.error("RPC Error:", error.message);
+        logger.error({ err: error, action: 'createPackage', studentId: student_id, userId: user.id }, "RPC Error selling package");
         return { success: false, error: error.message };
     }
 
+    logger.info({ studentId: student_id, userId: user.id, credits, price }, 'Paquete vendido y agendado exitosamente');
     revalidatePath("/dashboard/students");
     return { success: true };
 }
@@ -185,9 +191,11 @@ export async function deleteStudent(id: string): Promise<ActionState> {
     const { error } = await supabase.from("students").update({ deleted_at: new Date().toISOString() }).eq("id", id).eq("school_id", membership.school_id);
 
     if (error) {
+        logger.error({ err: error, action: 'deleteStudent', studentId: id, userId: user.id }, 'Error al marcar estudiante como eliminado');
         return { success: false, error: error.message };
     }
 
+    logger.info({ studentId: id, userId: user.id }, 'Estudiante eliminado (soft-delete) exitosamente');
     revalidatePath("/dashboard/students");
     return { success: true };
 }
