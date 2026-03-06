@@ -40,26 +40,39 @@ export async function getFinancialData(filters?: ReportFilters) {
     const payments = paymentsResponse.data || []
     const expenses = expensesResponse.data || []
 
-    const monthlyData: Record<string, { income: number, expenses: number }> = {}
+    const monthlyData: Record<string, { income: number, expenses: number, isCurrentMonth: boolean }> = {}
 
     payments.forEach(p => {
         const month = format(new Date(p.payment_date), 'MMM yyyy')
-        if (!monthlyData[month]) monthlyData[month] = { income: 0, expenses: 0 }
+        if (!monthlyData[month]) monthlyData[month] = { income: 0, expenses: 0, isCurrentMonth: month === format(new Date(), 'MMM yyyy') }
         monthlyData[month].income += Number(p.amount)
     })
 
     expenses.forEach(e => {
         const month = format(new Date(e.date), 'MMM yyyy')
-        if (!monthlyData[month]) monthlyData[month] = { income: 0, expenses: 0 }
+        if (!monthlyData[month]) monthlyData[month] = { income: 0, expenses: 0, isCurrentMonth: month === format(new Date(), 'MMM yyyy') }
         monthlyData[month].expenses += Number(e.amount)
     })
 
+    const currentDate = new Date()
+    const daysInCurrentMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0).getDate()
+    const currentDayOrPast = Math.max(1, currentDate.getDate()) // Avoid division by zero on 1st day early morning
+
     return {
         success: true,
-        data: Object.entries(monthlyData).map(([month, totals]) => ({
-            month,
-            ...totals
-        })).sort((a, b) => new Date(a.month).getTime() - new Date(b.month).getTime())
+        data: Object.entries(monthlyData).map(([month, totals]) => {
+            let projectedIncome = totals.income;
+            if (totals.isCurrentMonth && !filters?.endDate) {
+                // Project income based on days passed vs total days
+                projectedIncome = (totals.income / currentDayOrPast) * daysInCurrentMonth;
+            }
+            return {
+                month,
+                income: totals.income,
+                expenses: totals.expenses,
+                projectedIncome: Math.round(projectedIncome)
+            }
+        }).sort((a, b) => new Date(a.month).getTime() - new Date(b.month).getTime())
     }
 }
 
